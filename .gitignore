@@ -1,0 +1,58 @@
+# R与环境相关文件
+.RData
+.Rhistory
+.Ruserdata
+.Rapp.history
+
+# RStudio项目文件
+.Rproj.user/
+*.Rproj
+
+# 临时文件
+*.log
+*.aux
+*.out
+*.toc
+*.bak
+*.synctex.gz
+*.blg
+*.bbl
+
+# 数据文件
+*.csv
+*.Rdata
+*.rda
+*.rds
+
+# 输出文件
+*.pdf
+*.html
+*.docx
+*.xlsx
+# *.png
+*.jpg
+
+# Shiny应用临时文件
+rsconnect/
+shiny_app_cache/
+*.log
+
+# 环境变量文件
+.Renviron
+
+# R临时工作文件
+*.Rds
+*.rdx
+*.rdb
+
+# 包安装文件
+packrat/
+renv/
+
+# IDE相关文件
+.vscode/
+.idea/
+
+# 系统文件
+.DS_Store
+Thumbs.db
