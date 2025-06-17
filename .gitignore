@@ -19,7 +19,6 @@
 *.bbl
 
 # 数据文件
-*.csv
 *.Rdata
 *.rda
 *.rds
