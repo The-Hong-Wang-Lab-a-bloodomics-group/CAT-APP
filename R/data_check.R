@@ -112,10 +112,12 @@ data_check <- function(data, data_group = NULL, cutoff = 0.9, DE_filter = T,
       p <- ggplot(data_filtered, aes(x = key, y = log2(value + 1), fill = group)) + 
         geom_boxplot() +
         theme_classic() +
-        stat_compare_means(aes(group = group), label = "p.signif", method = "wilcox.test", size = 3) + 
-        theme(axis.text.x = element_text(angle = 90, hjust = 1, colour = "black", size = 10),
-              axis.text.y = element_text(hjust = 1, colour = "black", size = 10),
-              plot.title = element_text(hjust = 0.5)) +
+        stat_compare_means(aes(group = group), label = "p.signif", method = "wilcox.test", size = 5) + 
+        theme(axis.text.x = element_text(angle = 90, hjust = 1, colour = "black", size = 13),
+              axis.text.y = element_text(hjust = 1, colour = "black", size = 13),
+              axis.title.y = element_text(colour = "black", size = 15),
+              axis.title.x = element_text(colour = "black", size = 15),
+              plot.title = element_text(hjust = 0.5,size = 15,colour = "black"),face = "bold") +
         labs(title = title)
       
       # 提取统计结果
@@ -127,14 +129,15 @@ data_check <- function(data, data_group = NULL, cutoff = 0.9, DE_filter = T,
       p <- ggplot(data_filtered, aes(x = key, y = log2(value + 1))) + 
         geom_boxplot(fill = "lightblue") +
         theme_classic() +
-        theme(axis.text.x = element_text(angle = 90, hjust = 1, colour = "black", size = 10),
-              axis.text.y = element_text(hjust = 1, colour = "black", size = 10),
-              plot.title = element_text(hjust = 0.5)) +
+        theme(axis.text.x = element_text(angle = 90, hjust = 1, colour = "black", size = 5),
+              axis.text.y = element_text(hjust = 1, colour = "black", size = 13),
+              axis.title.y = element_text(colour = "black", size = 15),
+              axis.title.x = element_text(colour = "black", size = 15),
+              plot.title = element_text(hjust = 0.5,size = 15,colour = "black"),face = "bold") +
         labs(title = paste(title, "(no group matrix)"))
       
       keys_with_high_pvalue <- unique(data_filtered$key)  # 无分组时保留所有marker
     }
-    
     return(list(data = data_filtered, keys_with_high_pvalue = keys_with_high_pvalue, plot = p))
   }
   
@@ -180,12 +183,16 @@ data_check <- function(data, data_group = NULL, cutoff = 0.9, DE_filter = T,
     p <- ggplot(data_filtered, aes(x = id, y = log2(value + 1), fill = id)) + 
       geom_boxplot() +
       theme_classic() +
-      stat_compare_means(aes(group = id), label = "p.format", method = "anova", size = 3) + 
-      theme(axis.text.x = element_text(angle = 90, hjust = 1, colour = "black", size = 10),
-            axis.text.y = element_text(hjust = 1, colour = "black", size = 10),
-            plot.title = element_text(hjust = 0.5),
+      stat_compare_means(aes(group = id), label = "p.format", method = "anova", size = 7) + 
+      theme(axis.text.x = element_text(angle = 90, hjust = 1, colour = "black", size = 13),
+            axis.text.y = element_text(hjust = 1, colour = "black", size = 13),
+            axis.title.y = element_text(colour = "black", size = 15),
+            axis.title.x = element_text(colour = "black", size = 15),
+            plot.title = element_text(hjust = 0.5,size = 15,colour = "black",face = "bold"),
             legend.position="none") +
-      labs(title = paste(title, "level"))
+      labs(title = paste(title),
+           x = "Sample",
+           y = "Contamination level")
     return(p)
   }
   analyze_markers_full <- function(data_ggplot, marker_list, analyze_markers_result, correlation_result) {

@@ -47,7 +47,7 @@ library(ggplot2)
 library(tidyr)
 library(dplyr)
 
-plot_protein_by_sample <- function(data) {
+plot_protein_by_sample <- function(data,title) {
   # data 为 matrix，行为 protein, 列为 sample id
   
   # 将矩阵转换为数据框
@@ -60,10 +60,13 @@ plot_protein_by_sample <- function(data) {
   p <- ggplot(data_long, aes(x = sample_id, y = log2(value + 1), fill = sample_id)) + 
     geom_boxplot() +
     theme_classic() +
-    theme(axis.text.x = element_text(angle = 90, hjust = 1, colour = "black", size = 10),
-          axis.text.y = element_text(hjust = 1, colour = "black", size = 10),
-          plot.title = element_text(hjust = 0.5),
-          legend.position = "right") 
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, colour = "black", size = 13),
+          axis.text.y = element_text(hjust = 1, colour = "black", size = 13),
+          axis.title.y = element_text(colour = "black", size = 15),
+          axis.title.x = element_text(colour = "black", size = 15),
+          plot.title = element_text(hjust = 0.5,size = 15,colour = "black",face = "bold"),
+          legend.position = "none")  +
+    labs(x = "Sample",y = "Contamination level",title = paste(title, " pannel"))
   return(p)
 }
 

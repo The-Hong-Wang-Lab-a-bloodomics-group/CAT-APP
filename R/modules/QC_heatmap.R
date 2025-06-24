@@ -9,7 +9,7 @@ QC_heatmap <- function(data, data_group = NULL) {
     data_heatmap <- rescale(scale(t(data)), to = c(-2, 2))
     pheatmap(t(data_heatmap),
              show_rownames = FALSE,
-             scale = "row",
+             scale = "row",fontsize = 13,fontsize_row = 13,fontsize_col = 13,
              treeheight_row = 0,
              legend_breaks = c(-2, 0, 2),
              color = colorRampPalette(c("#4DBBD5FF", "white", "red"))(100))
@@ -34,11 +34,9 @@ QC_heatmap <- function(data, data_group = NULL) {
     # 2.if the group is more than two, you can add by format.
     annotation_heatmap <- data_pre %>%
       dplyr::select(group)
-
-
     pheatmap(as.matrix(data_heatmap),
              show_rownames = FALSE,
              annotation_col = annotation_heatmap,
-             scale = "row")
+             scale = "row",fontsize = 13,fontsize_row = 13,fontsize_col = 13)
   }
 }

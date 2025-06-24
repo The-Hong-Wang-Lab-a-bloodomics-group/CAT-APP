@@ -10,7 +10,7 @@ library(DT)
 options(shiny.maxRequestSize=30*1024^2)
 # 定义 UI ----
 ui <- fluidPage(
-  titlePanel("Plasma Protein Contamination Correction and Differential Expression Analysis"),
+  titlePanel("Contamination Analysis and Tempering-An Automated Online Platform for Plasma Proteomics"),
   tabsetPanel(id = "Step",
               ## Welcome Tab ----
               tabPanel("Welcome",
@@ -20,7 +20,7 @@ ui <- fluidPage(
                            div(style = "max-width: 900px; width: 100%; text-align: left; padding: 20px;",
                                
                                # 标题（居中显示）
-                               h2("Welcome to Plasma Protein Analysis Tool", 
+                               h2("Welcome to CAT-APP", 
                                   style = "text-align: center; font-size: calc(20px + 1vw); margin-bottom: 25px;"),
                                
                                # 图片（居中显示但内容左对齐）
@@ -56,7 +56,13 @@ ui <- fluidPage(
                                # 页脚（居中显示）
                                hr(style = "margin: 30px 0; border-top: 1px solid #eee;"),
                                p(style = "text-align: center; font-style: italic;", 
-                                 "For questions or feedback, please contact support@example.com")
+                                 "If you have any questions or feedback, please do so in the github repository.",
+                                 tags$br(),  # 这里添加换行
+                                 tags$a(  # 将URL转换为可点击链接
+                                   href = "https://github.com/The-Hong-Wang-Lab-a-bloodomics-group/CAT-APP",
+                                   target = "_blank",
+                                   "https://github.com/The-Hong-Wang-Lab-a-bloodomics-group/CAT-APP"
+                                 ))
                            )
                        )
               ),
@@ -162,7 +168,7 @@ ui <- fluidPage(
                                               DTOutput("data_marker_platelet"),
                                               plotOutput("contamination_platelet_plot"))
                                    ),
-                                   h4("污染marker的相关性"),
+                                   h4("Relevance of contamination markers"),
                                    tabsetPanel(
                                      tabPanel("Erythrocyte",
                                               downloadButton("download_cor_data_erythrocyte", "Download Corrected Data"),
@@ -252,7 +258,7 @@ ui <- fluidPage(
                          )
                        )
               ),
-              ## 在tabsetPanel中添加User Manual选项卡（Step4之后）----
+              ## User Manual ----
               tabPanel("User Manual",
                        div(style = "padding: 20px; max-width: 1000px; margin: 0 auto;",
                            h2("User Manual", style = "color: #2c3e50; border-bottom: 2px solid #2c3e50; padding-bottom: 10px;"),
@@ -318,7 +324,7 @@ ui <- fluidPage(
                              tags$li(strong("标记物验证："),"需确保选择的污染标记物在数据集中稳定表达"),
                              tags$li(strong("参数优化："),"建议通过CV分布，相关系数分布图和PCA结果等调整约束因子，在绝大多数情况下，默认值即可满足需求"),
                              tags$li(strong("结果验证："),"校正后应观察到污染标记物的CV值显著降低，同时数据集的相关系数分布中高相关分布显著减少"),
-                             tags$li(strong("技术支持："),"遇到问题请联系support@proteomics.com")
+                             tags$li(strong("技术支持："),"遇到问题请在github中提交问题https://github.com/The-Hong-Wang-Lab-a-bloodomics-group/CAT-APP")
                            ),
                            
                            h3("4. 常见问题", style = "color: #34495e;"),
@@ -756,7 +762,8 @@ server <- function(input, output, session) {
     source("./R/plot_expression_correlation.R")
     req(result_check())
     result <- plot_expression_correlation(exprMatrix = result_check()$correlation$erythrocyte$r,
-                                          displayNumbers = T,input_type = "correlation")
+                                          displayNumbers = T,input_type = "correlation",
+                                          title = "Expression Correlation Matrix(Erythrocyte markers)")
     return(result$plot)
   },height = 400,width = 800)
   # output$cor_erythrocyte_data <- renderDT({
@@ -768,7 +775,8 @@ server <- function(input, output, session) {
     source("./R/plot_expression_correlation.R")
     req(result_check())
     result <- plot_expression_correlation(exprMatrix = result_check()$correlation$coagulation$r,
-                                          displayNumbers = T,input_type = "correlation")
+                                          displayNumbers = T,input_type = "correlation",
+                                          title = "Expression Correlation Matrix(Coagulation markers)")
     return(result$plot)
   },height = 400,width = 800)
   # output$cor_coagulation_data <- renderDT({
@@ -780,7 +788,8 @@ server <- function(input, output, session) {
     source("./R/plot_expression_correlation.R")
     req(result_check())
     result <- plot_expression_correlation(exprMatrix = result_check()$correlation$platelet$r,
-                                          displayNumbers = T,input_type = "correlation")
+                                          displayNumbers = T,input_type = "correlation",
+                                          title = "Expression Correlation Matrix(Platelet markers)")
     return(result$plot)
   },height = 400,width = 800)
   # output$cor_platelet_data <- renderDT({
@@ -921,14 +930,15 @@ server <- function(input, output, session) {
       geom_violin() +
       geom_boxplot(fill = "white", width = 0.15) +
       scale_fill_manual(values = color_values) +
-      theme_minimal(base_size = 14) +
+      theme_classic(base_size = 14) +
+      labs(y = "Coefficient of Variation", x = "Type",fill = "Type") +
       theme(
         axis.text.x = element_blank(),
         axis.text.y = element_text(size = 13),
-        axis.title.y = element_text(size = 15),
-        axis.title.x = element_text(size = 15),
-        legend.title = element_text(size = 15),
-        legend.text = element_text(size = 13)
+        axis.title.y = element_text(size = 15,colour = "black"),
+        axis.title.x = element_text(size = 15,colour = "black"),
+        legend.title = element_text(size = 15,colour = "black",face = "bold"),
+        legend.text = element_text(size = 13,colour = "black")
       )
     
     # 添加统计检验（当有比较对时）
@@ -1033,13 +1043,15 @@ server <- function(input, output, session) {
       geom_violin(trim = FALSE) +
       geom_boxplot(fill = "white",width = 0.15) +
       scale_fill_manual(values = color_values) +
-      labs(y = "Coefficient of Variation", x = "") +
-      theme_minimal(base_size = 14) +
+      theme_classic(base_size = 14) +
+      labs(y = "Coefficient of Variation", x = "Type",fill = "Type") +
       theme(
         axis.text.x = element_blank(),
-        axis.ticks.x = element_blank(),
-        legend.position = "right",
-        panel.grid.major.x = element_blank()
+        axis.text.y = element_text(size = 13),
+        axis.title.y = element_text(size = 15,colour = "black"),
+        axis.title.x = element_text(size = 15,colour = "black"),
+        legend.title = element_text(size = 15,colour = "black",face = "bold"),
+        legend.text = element_text(size = 13,colour = "black")
       )
     
     # 智能添加统计标注
@@ -1116,7 +1128,7 @@ server <- function(input, output, session) {
     marker <- result_check()$marker_list$erythrocyte
     source("./R/plot_protein_by_sample.R")
     if (length(marker) > 0) {
-      plot_protein_by_sample(data = result_correct()$correct_data[rownames(result_correct()$correct_data)%in%result_correct()$marker_list$erythrocyte,])
+      plot_protein_by_sample(data = result_correct()$correct_data[rownames(result_correct()$correct_data)%in%result_correct()$marker_list$erythrocyte,],title = "Erythrocyte")
     }
     
   })
@@ -1128,7 +1140,7 @@ server <- function(input, output, session) {
     marker <- result_check()$marker_list$platelet
     source("./R/plot_protein_by_sample.R")
     if (length(marker) > 0) {
-      plot_protein_by_sample(data = result_correct()$correct_data[rownames(result_correct()$correct_data)%in%result_correct()$marker_list$platelet,])
+      plot_protein_by_sample(data = result_correct()$correct_data[rownames(result_correct()$correct_data)%in%result_correct()$marker_list$platelet,],title = "Platelet")
     }
     
   })
@@ -1140,7 +1152,7 @@ server <- function(input, output, session) {
     marker <- result_check()$marker_list$coagulation
     source("./R/plot_protein_by_sample.R")
     if (length(marker) > 0) {
-      plot_protein_by_sample(data = result_correct()$correct_data[rownames(result_correct()$correct_data)%in%result_correct()$marker_list$coagulation,])
+      plot_protein_by_sample(data = result_correct()$correct_data[rownames(result_correct()$correct_data)%in%result_correct()$marker_list$coagulation,],title = "Coagulation")
     }
     
   })

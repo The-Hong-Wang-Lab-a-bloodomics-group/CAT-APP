@@ -28,6 +28,13 @@ QC_PCA <- function(data, data_group = NULL) {
                  addEllipses = TRUE, # Concentration ellipses
                  legend.title = "Groups"
     ) +
-      theme_classic()
+      theme_classic() + 
+      theme(axis.text.x = element_text(angle = 90, hjust = 1, colour = "black", size = 13),
+            axis.text.y = element_text(hjust = 1, colour = "black", size = 13),
+            axis.title.x = element_text(colour = "black", size = 15),
+            axis.title.y = element_text(colour = "black", size = 15),
+            legend.text = element_text(colour = "black", size = 13),
+            legend.title = element_text(colour = "black", size = 15),
+            plot.title = element_text(hjust = 0.5,face = "bold",colour = "black", size = 15)) 
   }
 }
