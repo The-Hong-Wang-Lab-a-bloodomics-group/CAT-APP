@@ -684,13 +684,13 @@ server <- function(input, output, session) {
   output$correlation_p_pre_plot <- renderPlot({
     source("./R/plot_stat_distribution.R")
     req(result_check())
-    plot_stat_distribution(data = result_check()$rawdata,
+    plot_stat_distribution(data = result_check()$rawdata,marker_list = result_check()$marker_list,
                            type = "pearson", statistic = "pvalue", alpha = 0.05)
   },height = 400,width = 500)
   output$correlation_r_pre_plot <- renderPlot({
     source("./R/plot_stat_distribution.R")
     req(result_check())
-    plot_stat_distribution(data = result_check()$rawdata,
+    plot_stat_distribution(data = result_check()$rawdata,marker_list = result_check()$marker_list,
                            type = "pearson", statistic = "correlation", alpha = 0.05)
   },height = 400,width = 500)
   #### pca ----
@@ -722,14 +722,14 @@ server <- function(input, output, session) {
     source("./R/plot_stat_distribution.R")
     req(result_check())  # 确保数据存在
     req(result_correct())
-    plot_stat_distribution(data = result_correct()$correct_data,
+    plot_stat_distribution(data = result_correct()$correct_data,marker_list = result_check()$marker_list,
                            type = "pearson", statistic = "pvalue", alpha = 0.05)
   },height = 400,width = 500)
   output$correlation_r_post_plot <- renderPlot({
     source("./R/plot_stat_distribution.R")
     req(result_check())  # 确保数据存在
     req(result_correct())
-    plot_stat_distribution(data = result_correct()$correct_data,
+    plot_stat_distribution(data = result_correct()$correct_data,marker_list = result_check()$marker_list,
                            type = "pearson", statistic = "correlation", alpha = 0.05)
   },height = 400,width = 500)
   #### pca ----

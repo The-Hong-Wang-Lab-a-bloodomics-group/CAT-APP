@@ -117,8 +117,10 @@ data_check <- function(data, data_group = NULL, cutoff = 0.9, DE_filter = T,
               axis.text.y = element_text(hjust = 1, colour = "black", size = 13),
               axis.title.y = element_text(colour = "black", size = 15),
               axis.title.x = element_text(colour = "black", size = 15),
+              legend.text = element_text(colour = "black", size = 13),
+              legend.title = element_text(colour = "black", size = 15,face = "bold"),
               plot.title = element_text(hjust = 0.5,size = 15,colour = "black"),face = "bold") +
-        labs(title = title)
+        labs(title = title,fill = "Group")
       
       # 提取统计结果
       ggplot_build_obj <- ggplot_build(p)
@@ -133,8 +135,10 @@ data_check <- function(data, data_group = NULL, cutoff = 0.9, DE_filter = T,
               axis.text.y = element_text(hjust = 1, colour = "black", size = 13),
               axis.title.y = element_text(colour = "black", size = 15),
               axis.title.x = element_text(colour = "black", size = 15),
+              legend.text = element_text(colour = "black", size = 13),
+              legend.title = element_text(colour = "black", size = 15,face = "bold"),
               plot.title = element_text(hjust = 0.5,size = 15,colour = "black"),face = "bold") +
-        labs(title = paste(title, "(no group matrix)"))
+        labs(title = paste(title, "(no group matrix)"),fill = "Group")
       
       keys_with_high_pvalue <- unique(data_filtered$key)  # 无分组时保留所有marker
     }

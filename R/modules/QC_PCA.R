@@ -26,7 +26,7 @@ QC_PCA <- function(data, data_group = NULL) {
                  geom.ind = c("text", "point"), # show points only (but not "text")
                  col.ind = group_list, # color by groups
                  addEllipses = TRUE, # Concentration ellipses
-                 legend.title = "Groups"
+                 legend.title = "Group"
     ) +
       theme_classic() + 
       theme(axis.text.x = element_text(angle = 90, hjust = 1, colour = "black", size = 13),
@@ -34,7 +34,7 @@ QC_PCA <- function(data, data_group = NULL) {
             axis.title.x = element_text(colour = "black", size = 15),
             axis.title.y = element_text(colour = "black", size = 15),
             legend.text = element_text(colour = "black", size = 13),
-            legend.title = element_text(colour = "black", size = 15),
-            plot.title = element_text(hjust = 0.5,face = "bold",colour = "black", size = 15)) 
+            legend.title = element_text(colour = "black", size = 15,face = "bold"),
+            plot.title = element_text(hjust = 0.5,face = "bold",colour = "black", size = 15))
   }
 }

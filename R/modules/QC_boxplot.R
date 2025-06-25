@@ -44,7 +44,7 @@ QC_boxplot <- function(data, data_group = NULL) {
             axis.title.x = element_text(colour = "black", size = 15),
             axis.title.y = element_text(colour = "black", size = 15),
             legend.text = element_text(colour = "black", size = 13),
-            legend.title = element_text(colour = "black", size = 15),
+            legend.title = element_text(colour = "black", size = 15,face = "bold"),
             plot.title = element_text(hjust = 0.5,size = 15,colour = "black")) 
   }
 }
