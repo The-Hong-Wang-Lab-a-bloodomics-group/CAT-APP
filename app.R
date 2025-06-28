@@ -256,6 +256,7 @@ ui <- fluidPage(
                          )
                        )
               ),
+              # User Manual ----
               tabPanel("User Manual",
                        div(style = "padding: 20px; max-width: 1000px; margin: 0 auto;",
                            h2("User Manual", style = "color: #2c3e50; border-bottom: 2px solid #2c3e50; padding-bottom: 10px;"),
@@ -263,11 +264,10 @@ ui <- fluidPage(
                            h3("1. Tool Overview", style = "color: #34495e;"),
                            p("This tool is designed for plasma proteomics data analysis and provides the following core functions:"),
                            tags$ul(
-                             tags$li("Data quality assessment and visualization"),
-                             tags$li("Contamination assessment (red blood cells, platelets, coagulation system)"),
-                             tags$li("Contamination correction algorithm (based on robust regression model)"),
-                             tags$li("Differential expression analysis and enrichment analysis"),
-                             tags$li("Interactive result visualization and data export")
+                             style = "padding-left: 20px;",
+                             tags$li("Multi-dimensional.contamination assessmentand·adaptive contamination indexing"),
+                             tags$li("Linear regression model-based contamination correction"),
+                             tags$li("Data recovery evaluation with visualization")
                            ),
                            
                            h3("2. User Guide", style = "color: #34495e;"),
