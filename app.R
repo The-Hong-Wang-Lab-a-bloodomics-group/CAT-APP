@@ -12,11 +12,16 @@ options(shiny.maxRequestSize=30*1024^2)
 ui <- fluidPage(
   tags$head(
     # 确保 Umami 脚本被加载
-    tags$script(
-      defer = NA, 
-      src = "http://www.bloodecosystem.com:3000/script.js", 
-      `data-website-id` = "a8952081-8633-4fd2-a59f-4b32d27a8227"
-    ),
+    tags$script(defer = NA, src = "http://www.bloodecosystem.com:3000/script.js", 
+                `data-website-id` = "a8952081-8633-4fd2-a59f-4b32d27a8227"),
+    # tags$script(HTML("
+    #   // 当 Shiny 完成页面渲染时触发
+    #   $(document).on('shiny:connected', function() {
+    #     if (typeof umami !== 'undefined') {
+    #       umami.trackView(); // 手动记录页面浏览
+    #     }
+    #   });
+    # ")),
   tags$style(HTML("
       /* 全局字体调整 */
       body {
@@ -111,7 +116,7 @@ ui <- fluidPage(
                                # 图片（居中显示但内容左对齐）
                                div(style = "text-align: center; margin: 25px 0;",
                                    img(src = "Welcome_2.png", 
-                                       style = "max-width: 100%; height: auto; border-radius: 16px;")
+                                       style = "max-width: 100%; height: auto; border-radius: 0px;")
                                ),
                                
                                # 正文（强制左对齐）
