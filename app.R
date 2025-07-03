@@ -10,6 +10,91 @@ library(DT)
 options(shiny.maxRequestSize=30*1024^2)
 # 定义 UI ----
 ui <- fluidPage(
+  tags$head(
+    # 确保 Umami 脚本被加载
+    tags$script(
+      defer = NA, 
+      src = "http://www.bloodecosystem.com:3000/script.js", 
+      `data-website-id` = "a8952081-8633-4fd2-a59f-4b32d27a8227"
+    ),
+  tags$style(HTML("
+      /* 全局字体调整 */
+      body {
+        font-size: 16px;  /* 基础字体增大 */
+        line-height: 1.6; /* 增加行高提升可读性 */
+      }
+      
+      /* 标题层级优化 */
+      h1, h2, h3, h4, h5 {
+        font-weight: 600; /* 标题加粗 */
+        margin-top: 20px;
+        margin-bottom: 15px;
+      }
+      
+      h1 { font-size: 2.0rem; } /* 约32px */
+      h2 { font-size: 1.8rem; } /* 约28px */
+      h3 { font-size: 1.6rem; } /* 约25px */
+      h4 { font-size: 1.4rem; } /* 约22px */
+      h5 { font-size: 1.2rem; } /* 约19px */
+      
+      /* 面板标题优化 */
+      .panel-title { 
+        font-size: 1.5rem; 
+        font-weight: bold;
+      }
+      
+      /* 表格文字优化 */
+      .dataTables_wrapper {
+        font-size: 16px;
+      }
+      
+      /* 按钮文字优化 */
+      .btn {
+        font-size: 16px;
+        padding: 8px 16px;
+      }
+      
+      /* 滑块文字优化 */
+      .irs-min, .irs-max, .irs-single {
+        font-size: 14px;
+      }
+      
+      /* 选项卡优化 */
+      .nav-tabs > li > a {
+        font-size: 16px;
+        padding: 10px 15px;
+      }
+      
+      /* 表单控件文字 */
+      .control-label {
+        font-size: 16px;
+        font-weight: 500;
+      }
+      
+      /* 帮助图标放大 */
+      .glyphicon-question-sign {
+        font-size: 18px;
+        margin-left: 5px;
+        color: #337ab7;
+      }
+      
+      /* 增加内容区域的内边距 */
+      .main-content {
+        padding: 20px 25px;
+      }
+      
+      /* 欢迎页特定样式 */
+      #welcome-content {
+        font-size: 18px;
+        line-height: 1.7;
+      }
+      
+      #welcome-content li {
+        margin-bottom: 10px;
+        font-size: 17px;
+      }
+    "))
+),
   titlePanel("Contamination Analysis and Tempering-An Automated Online Platform for Plasma Proteomics"),
   tabsetPanel(id = "Step",
               ## Welcome Tab ----
@@ -24,16 +109,16 @@ ui <- fluidPage(
                                   style = "text-align: center; font-size: calc(20px + 1vw); margin-bottom: 25px;"),
                                
                                # 图片（居中显示但内容左对齐）
-                               div(style = "text-align: center; margin: 20px 0;",
+                               div(style = "text-align: center; margin: 25px 0;",
                                    img(src = "Welcome_2.png", 
-                                       style = "max-width: 100%; height: auto; border-radius: 8px;")
+                                       style = "max-width: 100%; height: auto; border-radius: 16px;")
                                ),
                                
                                # 正文（强制左对齐）
                                div(style = "text-align: left;",  # 显式覆盖可能继承的居中样式
                                    p("This interactive tool allows you to analyze and correct for contamination in plasma proteomics data."),
                                    
-                                   h4("Key features:", style = "margin-top: 25px;"),
+                                   h3("Key features:", style = "margin-top: 25px;"),
                                    tags$ul(
                                      style = "padding-left: 20px;",
                                      tags$li("Multi-dimensional.contamination assessmentand·adaptive contamination indexing"),
@@ -41,7 +126,7 @@ ui <- fluidPage(
                                      tags$li("Data recovery evaluation with visualization")
                                    ),
                                    
-                                   h4("How to use:", style = "margin-top: 25px;"),
+                                   h3("How to use:", style = "margin-top: 25px;"),
                                    tags$ol(
                                      style = "padding-left: 20px;",
                                      tags$li("Upload your protein expression data and group information"),
@@ -54,19 +139,20 @@ ui <- fluidPage(
                                # 页脚（居中显示）
                                hr(style = "margin: 30px 0; border-top: 1px solid #eee;"),
                                p(style = "text-align: center; font-style: italic;", 
-                                 "If you have any questions or feedback, please do so in the github repository.",
-                                 tags$br(),  # 这里添加换行
-                                 tags$a(  # 将URL转换为可点击链接
-                                   href = "https://github.com/The-Hong-Wang-Lab-a-bloodomics-group/CAT-APP",
+                                 "For any questions or feedback, please contact us via email: ",
+                                 tags$a(
+                                   href = "mailto:zhangdong_0121@foxmail.com",
                                    target = "_blank",
-                                   "https://github.com/The-Hong-Wang-Lab-a-bloodomics-group/CAT-APP"
-                                 ))
+                                   "zhangdong_0121@foxmail.com"
+                                 )
+                               )
                            )
                        )
               ),
               ## Step1 ----
               # 改为 data input
               tabPanel("Step 1: Data Input",
+                       div(class = "main-content",
                        sidebarLayout(
                          sidebarPanel(h3("Step 1: Data Input",
                                          tags$span(
@@ -113,11 +199,12 @@ ui <- fluidPage(
                            DTOutput("data_table"), 
                            h4("Group Information Preview"),
                            DTOutput("group_table")
-                         )))
+                         ))))
               ),
               ## Step2 ----
               # 拆分为data evaluation和define markers
               tabPanel("Step 2: Check markers and contamination levels",
+                       div(class = "main-content",
                        sidebarLayout(
                          sidebarPanel(
                            sliderInput("cor_cutoff_step2", "Correlation Cutoff",
@@ -189,11 +276,12 @@ ui <- fluidPage(
                                      tabPanel("Platelet", plotOutput("platelet_marker_pre_plot"))
                                    )
                          )
-                       )
+                       ))
               ),
               ## Step3 ----
               # correction
               tabPanel("Step 3: Correction Results",
+                       div(class = "main-content",
                        sidebarLayout(
                          sidebarPanel(h3("Step 3: Correction Analysis"),
                                       sliderInput("constraint_factor_step2", "constraint factor",
@@ -226,10 +314,11 @@ ui <- fluidPage(
                                    downloadButton("download_data", "Download Post-correction Data"),
                                    DTOutput("data_correct_table")
                          )
-                       )),
+                       ))),
               ## Step4 DE ----
               # DE & enrichment
               tabPanel("Step 4: Differential Expression",
+                       div(class = "main-content",
                        sidebarLayout(
                          sidebarPanel(
                            h3("Step 4: DE Analysis"),
@@ -254,10 +343,11 @@ ui <- fluidPage(
                              tabPanel("Volcano Plot (Post-correction)", plotOutput("volc_de_post"))
                            )
                          )
-                       )
+                       ))
               ),
               # User Manual ----
               tabPanel("User Manual",
+                       div(class = "main-content",
                        div(style = "padding: 20px; max-width: 1000px; margin: 0 auto;",
                            h2("User Manual", style = "color: #2c3e50; border-bottom: 2px solid #2c3e50; padding-bottom: 10px;"),
                            
@@ -334,7 +424,7 @@ ui <- fluidPage(
                                      "A: Yes. Removed proteins typically associate with contamination pathways, while new differential proteins often relate to biological pathways")
                            )
                        )
-              )
+              ))
               
   )
 )
