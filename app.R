@@ -12,7 +12,7 @@ options(shiny.maxRequestSize=30*1024^2)
 ui <- fluidPage(
   tags$head(
     # 确保 Umami 脚本被加载
-    tags$script(defer = NA, src = "//www.bloodecosystem.com:3000/script.js", 
+    tags$script(defer = NA, src = "//umami.bloodecosystem.com:3000/script.js", 
                 `data-website-id` = "a8952081-8633-4fd2-a59f-4b32d27a8227"),
     tags$script(HTML("
       // 当 Shiny 完成页面渲染时触发
