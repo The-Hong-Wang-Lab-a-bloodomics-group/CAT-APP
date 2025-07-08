@@ -9,16 +9,6 @@ library(readxl)
 library(DT)
 options(shiny.maxRequestSize=30*1024^2)
 
-
-# 增加计数函数
-increment_db_counter <- function() {
-  con <- dbConnect(RSQLite::SQLite(), DB_NAME)
-  dbExecute(con, "UPDATE usage_counter SET count = count + 1")
-  count <- dbGetQuery(con, "SELECT count FROM usage_counter")[1,1]
-  dbDisconnect(con)
-  return(count)
-}
-
 # 定义 UI ----
 ui <- fluidPage(
   tags$head(
