@@ -8,16 +8,7 @@ library(dplyr)
 library(readxl)
 library(DT)
 options(shiny.maxRequestSize=30*1024^2)
-# 数据库初始化 ----
-# 数据库初始化
-library(RSQLite)
-DB_NAME <- "usage_db.sqlite"
-con <- dbConnect(RSQLite::SQLite(), DB_NAME)
-dbExecute(con, "CREATE TABLE IF NOT EXISTS usage_counter (count INTEGER)")
-if (dbGetQuery(con, "SELECT COUNT(*) FROM usage_counter")[1,1] == 0) {
-  dbExecute(con, "INSERT INTO usage_counter VALUES (0)")
-}
-dbDisconnect(con)
+
 
 # 增加计数函数
 increment_db_counter <- function() {
@@ -183,9 +174,6 @@ ui <- fluidPage(
                                    "zhangdong_0121@foxmail.com"
                                  )
                                ),
-                               # div(id = "db-counter", 
-                               #     textOutput("db_counter")
-                               # ),
                                p("© 2025 CAT-APP - Contamination Analysis Tool for Plasma Proteomics")
                            )
                        )
@@ -474,12 +462,6 @@ ui <- fluidPage(
 
 # 定义 Server 逻辑 ----
 server <- function(input, output, session) {
-  ## 数据库计数
-  current_count <- increment_db_counter()
-  
-  output$db_counter <- renderText({
-    paste("数据库记录的使用次数:", current_count)
-  })
   ## 数据输入 ----
   ### 初始化 reactive values ----
   result_check <- reactiveVal()
