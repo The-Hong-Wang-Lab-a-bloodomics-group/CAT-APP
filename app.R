@@ -10,6 +10,7 @@ library(DT)
 options(shiny.maxRequestSize=30*1024^2)
 # 数据库初始化 ----
 # 数据库初始化
+library(RSQLite)
 DB_NAME <- "usage_db.sqlite"
 con <- dbConnect(RSQLite::SQLite(), DB_NAME)
 dbExecute(con, "CREATE TABLE IF NOT EXISTS usage_counter (count INTEGER)")
