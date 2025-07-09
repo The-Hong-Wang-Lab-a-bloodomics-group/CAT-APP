@@ -7,8 +7,25 @@ library(tidyr)
 library(dplyr)
 library(readxl)
 library(DT)
+library(RSQLite)
 options(shiny.maxRequestSize=30*1024^2)
+# 数据库初始化
+DB_NAME <- "usage_db.sqlite"
+con <- dbConnect(RSQLite::SQLite(), DB_NAME)
+dbExecute(con, "CREATE TABLE IF NOT EXISTS usage_counter (count INTEGER)")
+if (dbGetQuery(con, "SELECT COUNT(*) FROM usage_counter")[1,1] == 0) {
+  dbExecute(con, "INSERT INTO usage_counter VALUES (0)")
+}
+dbDisconnect(con)
 
+# 增加计数函数
+increment_db_counter <- function() {
+  con <- dbConnect(RSQLite::SQLite(), DB_NAME)
+  dbExecute(con, "UPDATE usage_counter SET count = count + 1")
+  count <- dbGetQuery(con, "SELECT count FROM usage_counter")[1,1]
+  dbDisconnect(con)
+  return(count)
+}
 # 定义 UI ----
 ui <- fluidPage(
   tags$head(
@@ -132,7 +149,7 @@ ui <- fluidPage(
                                    tags$ul(
                                      style = "padding-left: 20px;",
                                      tags$li("Multi-dimensional.contamination assessmentand·adaptive contamination indexing"),
-                                     tags$li("Linear regression model-based contamination correction"),
+                                     tags$li("Mathematic model-based contamination correction"),
                                      tags$li("Data recovery evaluation with visualization")
                                    ),
                                    
@@ -367,7 +384,7 @@ ui <- fluidPage(
                            tags$ul(
                              style = "padding-left: 20px;",
                              tags$li("Multi-dimensional.contamination assessmentand·adaptive contamination indexing"),
-                             tags$li("Linear regression model-based contamination correction"),
+                             tags$li("Mathematic model-based contamination correction"),
                              tags$li("Data recovery evaluation with visualization")
                            ),
                            
@@ -444,6 +461,26 @@ ui <- fluidPage(
 
 # 定义 Server 逻辑 ----
 server <- function(input, output, session) {
+  ## 数据库计数功能 ----
+  # 1. 创建新表用于记录按钮点击
+  DB_NAME <- "usage_db.sqlite"
+  con <- dbConnect(RSQLite::SQLite(), DB_NAME)
+  dbExecute(con, "CREATE TABLE IF NOT EXISTS run_check_counter (id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp TEXT)")
+  dbDisconnect(con)
+  
+  # 2. 增加按钮点击计数函数
+  increment_run_check_counter <- function() {
+    con <- dbConnect(RSQLite::SQLite(), DB_NAME)
+    timestamp <- as.character(Sys.time())
+    dbExecute(con, sprintf("INSERT INTO run_check_counter (timestamp) VALUES ('%s')", timestamp))
+    count <- dbGetQuery(con, "SELECT COUNT(*) FROM run_check_counter")[1,1]
+    dbDisconnect(con)
+    return(count)
+  }
+  db_count <- increment_db_counter()
+  # output$db_counter <- renderText({
+  #   paste("Total usage count:", db_count)
+  # })
   ## 数据输入 ----
   ### 初始化 reactive values ----
   result_check <- reactiveVal()
@@ -619,6 +656,8 @@ server <- function(input, output, session) {
   ### Step1检查按钮 ----
   observeEvent(input$run_check, {
     run_data_check()
+    # 增加统计计数
+    increment_run_check_counter()
     updateTabsetPanel(session, "Step", selected = "Step 2: Check markers and contamination levels")
   })
   
