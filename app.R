@@ -132,7 +132,7 @@ ui <- fluidPage(
                                    tags$ul(
                                      style = "padding-left: 20px;",
                                      tags$li("Multi-dimensional.contamination assessmentand·adaptive contamination indexing"),
-                                     tags$li("Linear regression model-based contamination correction"),
+                                     tags$li("Mathematic model-based contamination correction"),
                                      tags$li("Data recovery evaluation with visualization")
                                    ),
                                    
@@ -367,7 +367,7 @@ ui <- fluidPage(
                            tags$ul(
                              style = "padding-left: 20px;",
                              tags$li("Multi-dimensional.contamination assessmentand·adaptive contamination indexing"),
-                             tags$li("Linear regression model-based contamination correction"),
+                             tags$li("Mathematic model-based contamination correction"),
                              tags$li("Data recovery evaluation with visualization")
                            ),
                            
