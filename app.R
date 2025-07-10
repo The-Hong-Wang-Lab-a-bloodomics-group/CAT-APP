@@ -367,7 +367,7 @@ ui <- fluidPage(
                            p("This tool is designed for plasma proteomics data analysis and provides the following core functions:"),
                            tags$ul(
                              style = "padding-left: 20px;",
-                             tags$li("Multi-dimensional.contamination assessmentand·adaptive contamination indexing"),
+                             tags$li("Multi-dimensional contamination assessment and adaptive contamination indexing"),
                              tags$li("Mathematic model-based contamination correction"),
                              tags$li("Data recovery evaluation with visualization")
                            ),
