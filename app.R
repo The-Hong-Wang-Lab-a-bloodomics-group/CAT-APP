@@ -452,6 +452,7 @@ server <- function(input, output, session) {
   result_correct <- reactiveVal()
   result_de_pre <- reactiveVal()
   result_de_post <- reactiveVal()
+  run_count <- reactiveVal(get_run_count())
   ### cor_cutoff响应值 ----
   # 新增cor_cutoff响应式值
   cor_cutoff <- reactive({
@@ -621,8 +622,9 @@ server <- function(input, output, session) {
   ### Step1检查按钮 ----
   observeEvent(input$run_check, {
     run_data_check()
-    # 增加统计计数
-    increment_run_check_counter()
+    # 记录日志并更新计数
+    current_count <- log_run_event()
+    run_count(current_count)
     updateTabsetPanel(session, "Step", selected = "Step 2: Check markers and contamination levels")
   })
   
