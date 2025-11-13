@@ -150,7 +150,8 @@ ui <- fluidPage(
                                # 页脚（居中显示）
                                hr(style = "margin: 30px 0; border-top: 1px solid #eee;"),
                                p(style = "text-align: center; font-style: italic;", 
-                                 "For any questions or feedback, please contact us via email: ",
+                                 "CAT-APP is developed by R shiny (Version 1.11.1), and is free and open to all users with no login requirement. 
+                                 For any questions or feedback, please contact us via email: ",
                                  tags$a(
                                    href = "mailto:zhangdong_0121@foxmail.com",
                                    target = "_blank",
@@ -179,6 +180,8 @@ ui <- fluidPage(
                                                    choices = list("Load experimental data" = "experimental", 
                                                                   "Load example data" = "example"),
                                                    selected = "experimental"),
+                                      downloadButton("download_example_data", "Download example data"),
+                                      downloadButton("download_example_group_info", "Download example group info file"),
                                       conditionalPanel(
                                         condition = "input.data_source == 'experimental'",
                                         fileInput("data_file", "Upload Data File (CSV)", 
@@ -532,6 +535,21 @@ server <- function(input, output, session) {
     rownames(df) <- df[, 1]
     df
   })
+  ## 下载示例数据 ----
+  output$download_example_data <- downloadHandler(
+    filename = function() {
+      "example_data.csv"
+    },
+    content = function(file) {
+      write.csv(example_data(), file)
+    })
+  output$download_example_group_info <- downloadHandler(
+    filename = function() {
+      "example_group_info.csv"
+    },
+    content = function(file) {
+      write.csv(example_group(), file)
+    })
   ## 读取数据 ----
   data <- reactive({
     if (input$data_source == "example") {
