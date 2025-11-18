@@ -531,7 +531,7 @@ Additionally, CAT-APP provides visualization of contamination indices for each s
                              tags$li(strong("Q1: "), "Why do negative values appear after correction?",
                                      "A: This is normal and may occur with extremely small values due to automatic log2 transformation"),
                              tags$li(strong("Q2: "), "How to determine optimal correlation coefficient threshold?",
-                                     "A: Default 0.9 works for most cases. Lower threshold if insufficient markers are identified"),,
+                                     "A: Default 0.9 works for most cases. Lower threshold if insufficient markers are identified"),
                              tags$li(strong("Q3: "), "What are Contamination Levels? How are they calculated?",
                                      "A: Contamination Levels are values calculated by CAT-APP for each sample, derived from the average expression of markers that are highly correlated within the dataset and show no significant differences between biological groups."),
                              tags$li(strong("Q4: "), "Is significant change in differential proteins post-correction normal?",
