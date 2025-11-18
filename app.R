@@ -169,11 +169,9 @@ ui <- fluidPage(
                        sidebarLayout(
                          sidebarPanel(h3("Step 1: Data Input",
                                          tags$span(
-                                           id = 'span1',
+                                           id = 'span_step1_data_input',
                                            `data-toggle` = "tooltip",
-                                           title = 'In this part, users can upload their own proteomics expression data and sample group data. 
-                                           The example data can be found when users click "Load example data" below. 
-                                           Detailed descriptions are provided in the "Help" part.',
+                                           title = 'In this part, users can upload their own proteomics expression data and sample group data.The example data can be found when users click "Load example data" below.Detailed descriptions are provided in the "Help" part.',
                                            tags$span(class = "glyphicon glyphicon-question-sign")
                                          )),
                                       radioButtons("data_source", "Select Data Source",
@@ -189,7 +187,13 @@ ui <- fluidPage(
                                         fileInput("group_file", "Upload Group Info File (CSV)", 
                                                   accept = ".csv")
                                       ),
-                                      h3("Grouping settings"),
+                                      h3("Grouping Settings",
+                                         tags$span(
+                                           id = 'span_step1_grouping_settings',
+                                           `data-toggle` = "tooltip",
+                                           title = 'In this step, users can set biological groups in the data to exclude markers that show significant differences between biological groups, preventing over-correction for variations arising from biological differences. Additionally, setting groups is fundamental for performing subsequent differential analysis. Here, group1 represents the experimental group, while group2 represents the control group.',
+                                           tags$span(class = "glyphicon glyphicon-question-sign")
+                                         )),
                                       # 新增去除生物学差异选项
                                       checkboxInput("remove_biological_diff", 
                                                     "Filter contamination marker proteins with inter-group bias", 
@@ -200,7 +204,16 @@ ui <- fluidPage(
                                         selectInput("group1", "Group 1", choices = NULL),
                                         selectInput("group2", "Group 2", choices = NULL)
                                       ),
-                                      sliderInput("cor_cutoff", "Correlation Cutoff",
+                                      h3("Correlation Cutoff", style = "margin: 0; margin-right: 5px;",
+                                      tags$span(
+                                        id = 'span_step1_correlation_cutoff',
+                                        `data-toggle` = "tooltip",
+                                        title = 'This value is the cutoff for screening highly correlated markers. Any marker with a maximum correlation below this value will be removed. When markers are present, a higher value leads to stricter results.',
+                                        tags$span(class = "glyphicon glyphicon-question-sign")
+                                      )),
+                                      sliderInput("cor_cutoff", 
+                                                  # label = "Correlation Cutoff",
+                                                  label = NULL,
                                                   min = 0.5, max = 0.99, value = 0.9, step = 0.01),
                                       actionButton("run_check", "Run Data Check")
                          ),
@@ -226,25 +239,59 @@ ui <- fluidPage(
                                        min = 0.5, max = 0.99, value = 0.9, step = 0.01),
                            actionButton("rerun_check_step2", "Re-run Data Check"),
                            h3("Step 2: Contamination Assessment"),
+                           h3("Correction Type", style = "margin: 0; margin-right: 5px;",
+                              tags$span(
+                                id = 'span_step2_contamination_assessment',
+                                `data-toggle` = "tooltip",
+                                title = 'CAT-APP automatically screens markers based on the previous settings. If no markers meet the requirements, it indicates no significant contamination in this panel.CAT-APP will automatically select panels that require correction.',
+                                tags$span(class = "glyphicon glyphicon-question-sign")
+                              )),
                            # 修改后的单选按钮组
                            tags$div(class = "form-group",
-                                    tags$label(class = "control-label", "Correction Type"),
+                                    tags$label(class = "control-label", label = NULL),
                                     checkboxInput("type_all", "All", value = FALSE),
                                     uiOutput("erythrocyte_checkbox"),
                                     uiOutput("platelet_checkbox"),
                                     uiOutput("coagulation_checkbox")),
-                           sliderInput("constraint_factor", "constraint factor",
+                           h3("constraint factor", style = "margin: 0; margin-right: 5px;",
+                              tags$span(
+                                id = 'span_step2_constraint_factor',
+                                `data-toggle` = "tooltip",
+                                title = 'If users consider the correction effect too strong or too weak, they can adjust the correction strength by setting the constraint factor.',
+                                tags$span(class = "glyphicon glyphicon-question-sign")
+                              )),
+                           sliderInput("constraint_factor", label = NULL,
+                                       # label = "constraint factor",
                                        min = 0.5, max = 1.5, value = 1.0, step = 0.01),
                            actionButton("run_correct", "Run Correction")),
                          mainPanel(h3("Data Quality Assessment"),
-                                   h4("Contamination Summary"),
+                                   h4("Contamination Summary",
+                                      tags$span(
+                                        id = 'span_step2_contamination_summary',
+                                        `data-toggle` = "tooltip",
+                                        title = "In this step, CAT-APP summarizes the status of markers in each panel:
+- 'missing' indicates that the marker was not detected in the dataset;
+- 'non-removable biological variation' indicates that the marker shows significant biological differences between the two groups and will be removed in subsequent analysis;
+- 'low correlation' indicates that the marker does not have high correlation characteristics and will also be removed in subsequent analysis.",
+                                        tags$span(class = "glyphicon glyphicon-question-sign")
+                                      )),
                                    verbatimTextOutput("contamination_summary"),
                                    tabsetPanel(
                                      tabPanel("Erythrocyte", DTOutput("erythrocyte_marker_table")),
                                      tabPanel("Coagulation", DTOutput("coagulation_marker_table")),
                                      tabPanel("Platelet", DTOutput("platelet_marker_table"))
                                    ),
-                                   h4("Quality Control"),
+                                   h4("QC(Pre-correction)",
+                                      tags$span(
+                                        id = 'span_step2_pre-correction_qc',
+                                        `data-toggle` = "tooltip",
+                                        title = "CAT-APP performs basic quality control on the data, including:
+- Correlation: Displays the correlation distribution between each protein and sample contamination levels. Normally, it should be a normal distribution centered around 0. If there is a peak near 1, it indicates the presence of highly contaminated proteins.
+- PCA: Shows the distribution of samples on PCA plots, allowing users to check for potential contaminated outlier samples and verify whether samples cluster as expected.
+- Heatmap: Reveals whether there are abnormally high-expressed proteins, helping to identify potential contaminated protein expression patterns.
+- Boxplot: Displays the protein intensity distribution across samples, enabling users to detect potential contaminated samples.",
+                                        tags$span(class = "glyphicon glyphicon-question-sign")
+                                      )),
                                    tabsetPanel(
                                      tabPanel("correlation", fluidRow(
                                        column(width = 5,
@@ -256,7 +303,14 @@ ui <- fluidPage(
                                      tabPanel("Heatmap", plotOutput("heatmap_pre_plot")),
                                      tabPanel("Boxplot", plotOutput("boxplot_pre_plot"))
                                    ),
-                                   h4("Contamination Marker Expression"),
+                                   h4("Contamination Marker Expression",
+                                      tags$span(
+                                        id = 'span_step2_contamination_marker_expression',
+                                        `data-toggle` = "tooltip",
+                                        title = "CAT-APP automatically calculates marker expression for each sample. 
+If grouping information was provided earlier, it will filter out markers with significant differences between groups, which will not be included in subsequent analyses.",
+                                        tags$span(class = "glyphicon glyphicon-question-sign")
+                                      )),
                                    tabsetPanel(
                                      tabPanel("Erythrocyte",
                                               DTOutput("data_marker_erythrocyte"),
@@ -268,7 +322,14 @@ ui <- fluidPage(
                                               DTOutput("data_marker_platelet"),
                                               plotOutput("contamination_platelet_plot"))
                                    ),
-                                   h4("Relevance of contamination markers"),
+                                   h4("Relevance of contamination markers",
+                                      tags$span(
+                                        id = 'span_step2_relevance_of_contamination_markers',
+                                        `data-toggle` = "tooltip",
+                                        title = "CAT-APP automatically calculates correlations between markers and screens for highly correlated markers based on the Correlation Cutoff setting. 
+If contamination exists, the corresponding markers should exhibit highly correlated characteristics. Users can download the correlation results for further analysis.",
+                                        tags$span(class = "glyphicon glyphicon-question-sign")
+                                      )),
                                    tabsetPanel(
                                      tabPanel("Erythrocyte",
                                               downloadButton("download_cor_data_erythrocyte", "Download Corrected Data"),
@@ -283,7 +344,17 @@ ui <- fluidPage(
                                               DTOutput("cor_platelet_data"),
                                               plotOutput("cor_platelet_plot"))
                                    ),
-                                   h4("Contamination Levels"),
+                                   h4("Contamination Levels(Pre-correction)",
+                                      tags$span(
+                                        id = 'span_step2_contamination_levels',
+                                        `data-toggle` = "tooltip",
+                                        title = "CAT-APP automatically calculates the CV value distribution of markers and other proteins in each panel:
+- If there is a significant difference between the CV values of a panel and other normal proteins, it indicates significant contamination in that panel for this dataset;
+- If there is no significant difference in CV values compared to other proteins, but highly correlated markers exist, it suggests potential mild contamination in that panel for this dataset;
+- If there is no significant difference in CV values compared to other proteins, and no highly correlated markers exist, it indicates no contamination in that panel for this dataset, and no correction is needed.
+Additionally, CAT-APP provides visualization of contamination indices for each sample across different panels, allowing for intuitive identification of samples with potential contamination issues.",
+                                        tags$span(class = "glyphicon glyphicon-question-sign")
+                                      )),
                                    tabsetPanel(
                                      tabPanel("CV Analysis", plotOutput("cv_pre_plot")),
                                      tabPanel("Erythrocyte", plotOutput("erythrocyte_marker_pre_plot")),
@@ -302,11 +373,27 @@ ui <- fluidPage(
                                       sliderInput("constraint_factor_step2", "constraint factor",
                                                   min = 0.5, max = 1.5, value = 1.0, step = 0.01),
                                       actionButton("run_correct_step2", "Re-run Correction"),
-                                      h3("Step 4: DE Analysis"),
+                                      h3("Step 4: DE Analysis",
+                                         tags$span(
+                                           id = 'span_step3_DE_Analysis',
+                                           `data-toggle` = "tooltip",
+                                           title = 'Running this differential analysis requires grouping information from Step 1. This analysis is based on limma and will automatically perform log2 transformation on the data.',
+                                           tags$span(class = "glyphicon glyphicon-question-sign")
+                                         )),
                                       actionButton("run_de", "Run Differential Expression Analysis")
                          ),
                          mainPanel(h3("Correction Outcomes"), 
-                                   h4("Post-correction QC"),
+                                   h4("QC(Post-correction)",
+                                      tags$span(
+                                        id = 'span_step3_post-correction_qc',
+                                        `data-toggle` = "tooltip",
+                                        title = "CAT-APP performs basic quality control on the data, including:
+- Correlation: Displays the correlation distribution between each protein and sample contamination levels. Normally, it should be a normal distribution centered around 0. If there is a peak near 1, it indicates the presence of highly contaminated proteins.
+- PCA: Shows the distribution of samples on PCA plots, allowing users to check for potential contaminated outlier samples and verify whether samples cluster as expected.
+- Heatmap: Reveals whether there are abnormally high-expressed proteins, helping to identify potential contaminated protein expression patterns.
+- Boxplot: Displays the protein intensity distribution across samples, enabling users to detect potential contaminated samples.",
+                                        tags$span(class = "glyphicon glyphicon-question-sign")
+                                      )),
                                    tabsetPanel(
                                      tabPanel("correlation", fluidRow(
                                        column(width = 5,
@@ -318,7 +405,17 @@ ui <- fluidPage(
                                      tabPanel("Heatmap", plotOutput("heatmap_post_plot")),
                                      tabPanel("Boxplot", plotOutput("boxplot_post_plot"))
                                    ),
-                                   h4("Post-correction Contamination"),
+                                   h4("Contamination Levels(Post-correction)",
+                                      tags$span(
+                                        id = 'span_step2_contamination_levels',
+                                        `data-toggle` = "tooltip",
+                                        title = "CAT-APP automatically calculates the CV value distribution of markers and other proteins in each panel:
+- If there is a significant difference between the CV values of a panel and other normal proteins, it indicates significant contamination in that panel for this dataset;
+- If there is no significant difference in CV values compared to other proteins, but highly correlated markers exist, it suggests potential mild contamination in that panel for this dataset;
+- If there is no significant difference in CV values compared to other proteins, and no highly correlated markers exist, it indicates no contamination in that panel for this dataset, and no correction is needed.
+Additionally, CAT-APP provides visualization of contamination indices for each sample across different panels, allowing for intuitive identification of samples with potential contamination issues.",
+                                        tags$span(class = "glyphicon glyphicon-question-sign")
+                                      )),
                                    tabsetPanel(
                                      tabPanel("CV Analysis", plotOutput("cv_post_plot")),
                                      tabPanel("Erythrocyte", plotOutput("erythrocyte_marker_post_plot")),
@@ -404,7 +501,7 @@ ui <- fluidPage(
                            
                            h4("2.3 Data Correction", style = "color: #7f8c8d;"),
                            tags$ol(
-                             tags$li(strong("Correction type:"), "Select contamination types to correct (RBC, platelets, coagulation system). Do NOT select types without available markers"),
+                             tags$li(strong("Correction type:"), "Select contamination types to correct (RBC, platelets, coagulation system).", strong("Do not select types without available markers")),
                              tags$li(strong("Constraint factor:"), "Adjust correction strength using slider (recommended range: 0.8-1.2, default: 1)"),
                              tags$li(strong("Quality control:"), "Compare quality metrics pre/post correction: PCA, contaminant marker CV changes")
                            ),
@@ -423,10 +520,10 @@ ui <- fluidPage(
                            h3("3. Important Notes", style = "color: #34495e;"),
                            tags$ul(
                              tags$li(strong("Data preprocessing:"), "Perform missing value imputation before uploading"),
-                             tags$li(strong("Marker validation:"), "Ensure selected contamination markers show stable expression in the dataset"),
+                             tags$li(strong("Marker validation:"), "Ensure selected contamination markers show stable expression in the dataset."),
                              tags$li(strong("Parameter optimization:"), "Adjust constraint factor using CV distribution, correlation plots and PCA results. Default values suffice for most cases"),
                              tags$li(strong("Result validation:"), "Post-correction should show: Significant reduction in CV values of contaminant markers and decreased high-correlation distribution"),
-                             tags$li(strong("Technical support:"), "Report issues at: https://github.com/The-Hong-Wang-Lab-a-bloodomics-group/CAT-APP")
+                             tags$li(strong("Technical support:"), "please contact us via email: zhangdong_0121@foxmail.com")
                            ),
                            
                            h3("4. Frequently Asked Questions", style = "color: #34495e;"),
@@ -434,8 +531,10 @@ ui <- fluidPage(
                              tags$li(strong("Q1: "), "Why do negative values appear after correction?",
                                      "A: This is normal and may occur with extremely small values due to automatic log2 transformation"),
                              tags$li(strong("Q2: "), "How to determine optimal correlation coefficient threshold?",
-                                     "A: Default 0.9 works for most cases. Lower threshold if insufficient markers are identified"),
-                             tags$li(strong("Q3: "), "Is significant change in differential proteins post-correction normal?",
+                                     "A: Default 0.9 works for most cases. Lower threshold if insufficient markers are identified"),,
+                             tags$li(strong("Q3: "), "What are Contamination Levels? How are they calculated?",
+                                     "A: Contamination Levels are values calculated by CAT-APP for each sample, derived from the average expression of markers that are highly correlated within the dataset and show no significant differences between biological groups."),
+                             tags$li(strong("Q4: "), "Is significant change in differential proteins post-correction normal?",
                                      "A: Yes. Removed proteins typically associate with contamination pathways, while new differential proteins often relate to biological pathways")
                            )
                        )
