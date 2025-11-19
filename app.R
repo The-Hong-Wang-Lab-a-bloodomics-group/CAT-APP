@@ -555,8 +555,102 @@ server <- function(input, output, session) {
   result_de_pre <- reactiveVal()
   result_de_post <- reactiveVal()
   run_count <- reactiveVal(get_run_count())
+  #### 数据检查 ----
+  na_check_status <- reactiveVal(NULL)
+  negative_check_status <- reactiveVal(NULL)
+  ##### 检查数据缺失值的函数 ----
+  check_na_values <- function(data) {
+    if (is.null(data)) return(NULL)
+    
+    total_values <- dim(data)[1] * dim(data)[2]
+    na_count <- sum(is.na(data))
+    na_percentage <- round((na_count / total_values) * 100, 2)
+    
+    return(list(
+      has_na = na_count > 0,
+      na_count = na_count,
+      na_percentage = na_percentage,
+      total_values = total_values
+    ))
+  }
+  ##### 检查数据负值的函数 ----
+  check_negative_values <- function(data) {
+    if (is.null(data)) return(NULL)
+    
+    total_values <- dim(data)[1] * dim(data)[2]
+    negative_count <- sum(data < 0, na.rm = TRUE)
+    negative_percentage <- round((negative_count / total_values) * 100, 2)
+    
+    return(list(
+      has_negative = negative_count > 0,
+      negative_count = negative_count,
+      negative_percentage = negative_percentage,
+      total_values = total_values
+    ))
+  }
+  ##### Function to display missing value warning ----
+  show_na_warning <- function(na_info, data_type = "expression data") {
+    if (!is.null(na_info) && na_info$has_na) {
+      showModal(modalDialog(
+        title = strong("Missing Data Warning", style = "color: #d9534f;"),
+        tagList(
+          p(icon("exclamation-triangle"), 
+            sprintf("Missing values detected in your %s!", data_type)),
+          hr(),
+          p(sprintf("Total missing values: %d / %d (%.2f%%)", 
+                    na_info$na_count, na_info$total_values, na_info$na_percentage)),
+          hr(),
+          p(strong("Recommended actions:")),
+          tags$ul(
+            tags$li("Please perform missing value imputation before uploading data"),
+            tags$li("Common imputation methods: min value, median, KNN imputation, etc."),
+            tags$li("Re-upload data after processing for analysis")
+          )
+        ),
+        footer = tagList(
+          # modalButton("Ignore and Continue"),
+          actionButton("cancel_analysis", "Cancel Analysis", class = "btn-danger")
+        ),
+        size = "l"
+      ))
+    }
+  }
+  ##### Function to display negative value warning ----
+  show_negative_warning <- function(negative_info, data_type = "expression data") {
+    if (!is.null(negative_info) && negative_info$has_negative) {
+      showModal(modalDialog(
+        title = strong("Negative Values Warning", style = "color: #f0ad4e;"),
+        tagList(
+          p(icon("exclamation-triangle"), 
+            sprintf("Negative values detected in your %s!", data_type)),
+          hr(),
+          p(sprintf("Total negative values: %d / %d (%.2f%%)", 
+                    negative_info$negative_count, negative_info$total_values, 
+                    negative_info$negative_percentage)),
+          hr(),
+          p(strong("Recommended actions:")),
+          tags$ul(
+            tags$li("Please check if your data has been properly processed"),
+            tags$li("Ensure data has not been log-transformed before upload"),
+            tags$li("Consider data normalization or transformation if needed"),
+            tags$li("Verify data quality and processing pipeline")
+          )
+        ),
+        footer = tagList(
+          actionButton("cancel_analysis", "Cancel Analysis", class = "btn-warning")
+        ),
+        size = "l"
+      ))
+    }
+  }
+  
+  ### 处理取消分析按钮 ----
+  observeEvent(input$cancel_analysis, {
+    removeModal()
+    # updateTabsetPanel(session, "Step", selected = "Step 1: Data Input")
+    session$reload()
+  })
   ### cor_cutoff响应值 ----
-  # 新增cor_cutoff响应式值
   cor_cutoff <- reactive({
     input$cor_cutoff
   })
@@ -577,7 +671,7 @@ server <- function(input, output, session) {
     # 当输入不存在时使用默认值1.0
     if (is.null(input$constraint_factor)) 1.0 else input$constraint_factor
   })
-  ### 新增反应式值存储用户选择 ----
+  ### 反应式值存储用户选择 ----
   selected_markers <- reactiveValues(
     erythrocyte = NULL,
     coagulation = NULL,
@@ -652,23 +746,51 @@ server <- function(input, output, session) {
   ## 读取数据 ----
   data <- reactive({
     if (input$data_source == "example") {
-      example_data()
+      data <- example_data()
     } else {
       req(input$data_file)
       df <- read.csv(input$data_file$datapath)
       rownames(df) <- df[, 1]
-      df[, -1, drop = FALSE]
+      df <- df[, -1, drop = FALSE]
+      data <- df
     }
+    na_info <- check_na_values(data)
+    na_check_status(na_info)
+    # 如果存在缺失值，显示警告
+    if (!is.null(na_info) && na_info$has_na) {
+      show_na_warning(na_info, "data file")
+    }
+    negative_info <- check_negative_values(data)
+    negative_check_status(negative_info)
+    # 如果存在负值，显示警告
+    if (!is.null(negative_info) && negative_info$has_negative) {
+      show_negative_warning(negative_info, "data file")
+    }
+    return(data)
   })
+
   ### data_group
   data_group <- reactive({
     if (input$data_source == "example") {
-      example_group()
+      data <- example_group()
     } else {
       req(input$group_file)
       df <- read.csv(input$group_file$datapath)
       rownames(df) <- df[, 1]
-      df
+      data <- df
+      
+      # 检查分组数据的缺失值
+      na_info_group <- check_na_values(data)
+      if (!is.null(na_info_group) && na_info_group$has_na) {
+        show_na_warning(na_info_group, "data group info file")
+      }
+      negative_info <- check_negative_values(data)
+      negative_check_status(negative_info)
+      # 如果存在负值，显示警告
+      if (!is.null(negative_info) && negative_info$has_na) {
+        show_negative_warning(negative_info, "data group info file")
+      }
+      return(data)
     }
   })
   # 数据加载状态判断
@@ -676,7 +798,7 @@ server <- function(input, output, session) {
     !is.null(data()) && !is.null(data_group())
   })
   outputOptions(output, "data_loaded", suspendWhenHidden = FALSE)
-  
+
   ## 展示原始数据 ----
   output$data_table <- renderDT({
     req(data())
