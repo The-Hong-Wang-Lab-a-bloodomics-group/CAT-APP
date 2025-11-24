@@ -751,8 +751,7 @@ server <- function(input, output, session) {
       req(input$data_file)
       df <- read.csv(input$data_file$datapath)
       rownames(df) <- df[, 1]
-      df <- df[, -1, drop = FALSE]
-      data <- df
+      data <- subset(df,select = -c(X))
     }
     na_info <- check_na_values(data)
     na_check_status(na_info)
@@ -777,7 +776,7 @@ server <- function(input, output, session) {
       req(input$group_file)
       df <- read.csv(input$group_file$datapath)
       rownames(df) <- df[, 1]
-      data <- df
+      data <- subset(df,select = -c(X))
       
       # 检查分组数据的缺失值
       na_info_group <- check_na_values(data)

@@ -303,10 +303,15 @@ data_check <- function(data, data_group = NULL, cutoff = 0.9, DE_filter = T,
                                key = "key", 
                                value = "value", 
                                -c("id", "group"))
-  
+  write.csv(data_ggplot,file ="data_ggplot.csv")
   ## Perform analysis for erythrocyte, platelet, and coagulation markers ----
   ## 删除红细胞、血小板和凝血中在分组间存在差异的标记物 ----
-  
+  data_ggplot$value <- as.numeric(as.character(data_ggplot$value))
+  # 移除无限值和NA值
+  data_ggplot <- data_ggplot %>%
+    filter(!is.na(value), 
+           !is.infinite(value),
+           !is.nan(value))
   erythrocyte_results <- analyze_markers(data_ggplot, list_erythrocyte,
                                          "Erythrocyte marker")
   platelet_results <- analyze_markers(data_ggplot, list_platelet, 
