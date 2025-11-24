@@ -787,7 +787,7 @@ server <- function(input, output, session) {
       negative_info <- check_negative_values(data)
       negative_check_status(negative_info)
       # 如果存在负值，显示警告
-      if (!is.null(negative_info) && negative_info$has_na) {
+      if (!is.null(negative_info) && negative_info$has_negative) {
         show_negative_warning(negative_info, "data group info file")
       }
       return(data)
