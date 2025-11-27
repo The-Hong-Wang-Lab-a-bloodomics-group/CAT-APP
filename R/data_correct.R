@@ -103,6 +103,9 @@ data_correct <- function(data,
       a <- M - rowMeans(M)
       # 对列（样本）取均值
       mean <- apply(a,2, mean, na.rm = TRUE)
+      if (min(mean) < 0 ){
+        mean <- mean - min(mean)
+      }
       return(mean)
     }
     list_erythrocyte <-  if (any(rownames(data$rawdata) %in% erythrocyte_marker)) {
