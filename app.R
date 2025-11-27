@@ -1278,9 +1278,9 @@ server <- function(input, output, session) {
       theme(
         axis.text.x = element_blank(),
         axis.text.y = element_text(size = 13),
-        axis.title.y = element_text(size = 15,colour = "black"),
-        axis.title.x = element_text(size = 15,colour = "black"),
-        legend.title = element_text(size = 15,colour = "black",face = "bold"),
+        axis.title.y = element_text(size = 15,colour = "black",face = "bold"),
+        axis.title.x = element_text(size = 15,colour = "black",face = "bold"),
+        legend.title = element_text(size = 20,colour = "black",face = "bold"),
         legend.text = element_text(size = 13,colour = "black")
       )
     
@@ -1468,36 +1468,36 @@ server <- function(input, output, session) {
   output$erythrocyte_marker_post_plot <- renderPlot({
     req(result_check())  # 确保数据存在
     req(result_correct())
-    marker <- result_check()$marker_list$erythrocyte
+    marker <- result_correct()$marker_list$erythrocyte
     source("./R/plot_protein_by_sample.R")
     if (length(marker) > 0) {
-      plot_protein_by_sample(data = result_correct()$correct_data[rownames(result_correct()$correct_data)%in%result_correct()$marker_list$erythrocyte,],title = "Erythrocyte")
+      plot_protein_by_sample(data = result_correct()$correct_data[rownames(result_correct()$correct_data)%in%marker,],
+                             title = "Erythrocyte")
     }
-    
   })
   
   #### platelet marker ----
   output$platelet_marker_post_plot <- renderPlot({
     req(result_check())  # 确保数据存在
     req(result_correct())
-    marker <- result_check()$marker_list$platelet
+    marker <- result_correct()$marker_list$platelet
     source("./R/plot_protein_by_sample.R")
     if (length(marker) > 0) {
-      plot_protein_by_sample(data = result_correct()$correct_data[rownames(result_correct()$correct_data)%in%result_correct()$marker_list$platelet,],title = "Platelet")
+      plot_protein_by_sample(data = result_correct()$correct_data[rownames(result_correct()$correct_data)%in%marker,],
+                             title = "Platelet")
     }
-    
   })
   
   #### coagulation marker ----
   output$coagulation_marker_post_plot <- renderPlot({
     req(result_check())  # 确保数据存在
     req(result_correct())
-    marker <- result_check()$marker_list$coagulation
+    marker <- result_correct()$marker_list$coagulation
     source("./R/plot_protein_by_sample.R")
     if (length(marker) > 0) {
-      plot_protein_by_sample(data = result_correct()$correct_data[rownames(result_correct()$correct_data)%in%result_correct()$marker_list$coagulation,],title = "Coagulation")
+      plot_protein_by_sample(data = result_correct()$correct_data[rownames(result_correct()$correct_data)%in%marker,],
+                             title = "Coagulation")
     }
-    
   })
   
   # corrected_plot 显示校正后污染水平可视化 ----

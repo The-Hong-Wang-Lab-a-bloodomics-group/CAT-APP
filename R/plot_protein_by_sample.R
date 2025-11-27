@@ -60,13 +60,15 @@ plot_protein_by_sample <- function(data,title) {
   p <- ggplot(data_long, aes(x = sample_id, y = log2(value + 1), fill = sample_id)) + 
     geom_boxplot() +
     theme_classic() +
+    stat_compare_means(aes(group = sample_id), label = "p.format", method = "anova", size = 5) +
     theme(axis.text.x = element_text(angle = 90, hjust = 1, colour = "black", size = 13),
           axis.text.y = element_text(hjust = 1, colour = "black", size = 13),
-          axis.title.y = element_text(colour = "black", size = 15),
-          axis.title.x = element_text(colour = "black", size = 15),
-          plot.title = element_text(hjust = 0.5,size = 15,colour = "black",face = "bold"),
+          axis.title.y = element_text(colour = "black", size = 15,face = "bold"),
+          axis.title.x = element_text(colour = "black", size = 15,face = "bold"),
+          plot.title = element_text(hjust = 0.5,size = 20,colour = "black",face = "bold"),
           legend.position = "none")  +
-    labs(x = "Sample",y = "Contamination level",title = paste(title, " pannel"))
+    labs(x = "Sample",y = "Contamination level",title = paste(title, " pannel")) + 
+    ylim(NA, max(log2(data_long$value + 1)) * 1.2)  # 增加20%的上边距
   return(p)
 }
 

@@ -115,12 +115,13 @@ data_check <- function(data, data_group = NULL, cutoff = 0.9, DE_filter = T,
         stat_compare_means(aes(group = group), label = "p.signif", method = "wilcox.test", size = 5) + 
         theme(axis.text.x = element_text(angle = 90, hjust = 1, colour = "black", size = 13),
               axis.text.y = element_text(hjust = 1, colour = "black", size = 13),
-              axis.title.y = element_text(colour = "black", size = 15),
-              axis.title.x = element_text(colour = "black", size = 15),
+              axis.title.y = element_text(colour = "black", size = 15,face = "bold"),
+              axis.title.x = element_text(colour = "black", size = 15,face = "bold"),
               legend.text = element_text(colour = "black", size = 13),
               legend.title = element_text(colour = "black", size = 15,face = "bold"),
-              plot.title = element_text(hjust = 0.5,size = 15,colour = "black"),face = "bold") +
-        labs(title = title,fill = "Group")
+              plot.title = element_text(hjust = 0.5,size = 20,colour = "black"),face = "bold") +
+        labs(title = title,fill = "Group") +
+        ylim(NA, max(log2(data_filtered$value + 1)) * 1.2)  # 增加20%的上边距
       
       # 提取统计结果
       ggplot_build_obj <- ggplot_build(p)
@@ -133,12 +134,13 @@ data_check <- function(data, data_group = NULL, cutoff = 0.9, DE_filter = T,
         theme_classic() +
         theme(axis.text.x = element_text(angle = 90, hjust = 1, colour = "black", size = 5),
               axis.text.y = element_text(hjust = 1, colour = "black", size = 13),
-              axis.title.y = element_text(colour = "black", size = 15),
-              axis.title.x = element_text(colour = "black", size = 15),
+              axis.title.y = element_text(colour = "black", size = 15,face = "bold"),
+              axis.title.x = element_text(colour = "black", size = 15,face = "bold"),
               legend.text = element_text(colour = "black", size = 13),
               legend.title = element_text(colour = "black", size = 15,face = "bold"),
-              plot.title = element_text(hjust = 0.5,size = 15,colour = "black"),face = "bold") +
-        labs(title = paste(title, "(no group matrix)"),fill = "Group")
+              plot.title = element_text(hjust = 0.5,size = 20,colour = "black"),face = "bold") +
+        labs(title = paste(title, "(no group matrix)"),fill = "Group") + 
+        ylim(NA, max(log2(data_filtered$value + 1)) * 1.2)  # 增加20%的上边距
       
       keys_with_high_pvalue <- unique(data_filtered$key)  # 无分组时保留所有marker
     }
@@ -190,13 +192,14 @@ data_check <- function(data, data_group = NULL, cutoff = 0.9, DE_filter = T,
       stat_compare_means(aes(group = id), label = "p.format", method = "anova", size = 7) + 
       theme(axis.text.x = element_text(angle = 90, hjust = 1, colour = "black", size = 13),
             axis.text.y = element_text(hjust = 1, colour = "black", size = 13),
-            axis.title.y = element_text(colour = "black", size = 15),
-            axis.title.x = element_text(colour = "black", size = 15),
-            plot.title = element_text(hjust = 0.5,size = 15,colour = "black",face = "bold"),
+            axis.title.y = element_text(colour = "black", size = 15,face = "bold"),
+            axis.title.x = element_text(colour = "black", size = 15,face = "bold"),
+            plot.title = element_text(hjust = 0.5,size = 20,colour = "black",face = "bold"),
             legend.position="none") +
       labs(title = paste(title),
            x = "Sample",
-           y = "Contamination level")
+           y = "Contamination level") + 
+      ylim(NA, max(log2(data_filtered$value + 1)) * 1.2)  # 增加20%的上边距
     return(p)
   }
   analyze_markers_full <- function(data_ggplot, marker_list, analyze_markers_result, correlation_result) {
@@ -303,7 +306,6 @@ data_check <- function(data, data_group = NULL, cutoff = 0.9, DE_filter = T,
                                key = "key", 
                                value = "value", 
                                -c("id", "group"))
-  write.csv(data_ggplot,file ="data_ggplot.csv")
   ## Perform analysis for erythrocyte, platelet, and coagulation markers ----
   ## 删除红细胞、血小板和凝血中在分组间存在差异的标记物 ----
   data_ggplot$value <- as.numeric(as.character(data_ggplot$value))
