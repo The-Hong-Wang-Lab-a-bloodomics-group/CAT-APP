@@ -558,6 +558,7 @@ server <- function(input, output, session) {
   #### 数据检查 ----
   na_check_status <- reactiveVal(NULL)
   negative_check_status <- reactiveVal(NULL)
+  group_check_status <- reactiveVal(NULL)
   ##### 检查数据缺失值的函数 ----
   check_na_values <- function(data) {
     if (is.null(data)) return(NULL)
@@ -588,6 +589,49 @@ server <- function(input, output, session) {
       total_values = total_values
     ))
   }
+  ##### 检查分组数据的函数 ----
+  check_group_data <- function(group_data) {
+    if (is.null(group_data)) return(NULL)
+    
+    # 检查是否存在 group 列
+    if (!"group" %in% colnames(group_data)) {
+      return(list(
+        has_issue = TRUE,
+        issue_type = "missing_column",
+        message = "Group file is missing 'group' column!"
+      ))
+    }
+    # 检查 group 列中的分组情况
+    groups <- unique(na.omit(group_data$group))
+    n_groups <- length(groups)
+    
+    if (n_groups == 1) {
+      return(list(
+        has_issue = FALSE,
+        issue_type = "single_group",
+        message = "Only one group found. Differential analysis will be limited.",
+        groups = groups,
+        n_groups = n_groups
+      ))
+    } else if (n_groups == 2) {
+      return(list(
+        has_issue = FALSE,
+        issue_type = "two_groups",
+        message = "Two groups found. Differential analysis can be performed.",
+        groups = groups,
+        n_groups = n_groups
+      ))
+    } else {
+      return(list(
+        has_issue = TRUE,
+        issue_type = "too_many_groups",
+        message = paste("Found", n_groups, "groups. Only one or two groups are supported."),
+        groups = groups,
+        n_groups = n_groups
+      ))
+    }
+  }
+  
   ##### Function to display missing value warning ----
   show_na_warning <- function(na_info, data_type = "expression data") {
     if (!is.null(na_info) && na_info$has_na) {
@@ -640,6 +684,69 @@ server <- function(input, output, session) {
           actionButton("cancel_analysis", "Cancel Analysis", class = "btn-warning")
         ),
         size = "l"
+      ))
+    }
+  }
+  ##### Function to display group data warning ----
+  show_group_warning <- function(group_info) {
+    if (!is.null(group_info) && group_info$has_issue) {
+      if (group_info$issue_type == "missing_column") {
+        showModal(modalDialog(
+          title = strong("Group Data Issue", style = "color: #d9534f;"),
+          tagList(
+            p(icon("exclamation-triangle"), group_info$message),
+            hr(),
+            p(strong("Required format:")),
+            tags$ul(
+              tags$li("CSV file with at least two columns: 'id' and 'group'"),
+              tags$li("'id' column should match sample names in expression data"),
+              tags$li("'group' column should contain group labels")
+            )
+          ),
+          footer = tagList(
+            actionButton("cancel_analysis", "Cancel Analysis", class = "btn-danger")
+          ),
+          size = "m"
+        ))
+      } else if (group_info$issue_type == "too_many_groups") {
+        showModal(modalDialog(
+          title = strong("Group Data Issue", style = "color: #f0ad4e;"),
+          tagList(
+            p(icon("exclamation-triangle"), group_info$message),
+            hr(),
+            p(strong("Current groups:")),
+            p(paste(group_info$groups, collapse = ", ")),
+            hr(),
+            p(strong("Recommended actions:")),
+            tags$ul(
+              tags$li("Only one or two groups are supported"),
+              tags$li("Please modify your group file to contain only two groups")
+            )
+          ),
+          footer = tagList(
+            actionButton("cancel_analysis", "Cancel Analysis", class = "btn-warning")
+          ),
+          size = "l"
+        ))
+      }
+    } else if (!is.null(group_info) && group_info$issue_type == "single_group") {
+      showModal(modalDialog(
+        title = strong("Group Data Info", style = "color: #5bc0de;"),
+        tagList(
+          p(icon("info-circle"), group_info$message),
+          hr(),
+          p(strong("Current group:")),
+          p(group_info$groups),
+          hr(),
+          p(strong("Note:")),
+          tags$ul(
+            tags$li("Differential analysis between groups will not be available"),
+            tags$li("Contamination analysis can still be performed"),
+            tags$li("To enable differential analysis, please provide two groups")
+          )
+        ),
+        footer = modalButton("Continue"),
+        size = "m"
       ))
     }
   }
@@ -724,7 +831,7 @@ server <- function(input, output, session) {
   })
   
   example_group <- reactive({
-    df <- read.csv("./tests/group.csv")  # 示例分组路径
+    df <- read.csv("./tests/group.csv",na.strings = c("", "NA"))  # 示例分组路径
     rownames(df) <- df[, 1]
     df
   })
@@ -774,7 +881,7 @@ server <- function(input, output, session) {
       data <- example_group()
     } else {
       req(input$group_file)
-      df <- read.csv(input$group_file$datapath)
+      df <- read.csv(input$group_file$datapath,na.strings = c("", "NA"))
       rownames(df) <- df[, 1]
       data <- subset(df,select = -c(X))
       
@@ -788,6 +895,12 @@ server <- function(input, output, session) {
       # 如果存在负值，显示警告
       if (!is.null(negative_info) && negative_info$has_negative) {
         show_negative_warning(negative_info, "data group info file")
+      }
+      # 检查分组数据格式
+      group_info <- check_group_data(data)
+      group_check_status(group_info)
+      if (!is.null(group_info)) {
+        show_group_warning(group_info)
       }
       return(data)
     }
@@ -819,8 +932,44 @@ server <- function(input, output, session) {
     
     # 只有当用户选择去除生物学差异时才更新分组选择
     if (input$remove_biological_diff) {
-      updateSelectInput(session, "group1", choices = unique(data_group()$group))
-      updateSelectInput(session, "group2", choices = unique(data_group()$group))
+      updateSelectInput(session, "group1", 
+                        choices = unique(data_group()$group),
+                        selected = unique(data_group()$group)[2])
+      updateSelectInput(session, "group2",
+                        choices = unique(data_group()$group),
+                        selected = unique(data_group()$group)[1])
+    }
+  })
+  
+  ## 监听 group1 的变化，自动切换 group2
+  observeEvent(input$group1, {
+    req(data_group(), input$remove_biological_diff)
+    
+    groups <- unique(data_group()$group)
+    
+    # 只有当有两个分组时才进行自动切换
+    if (length(groups) == 2) {
+      # 获取另一个分组
+      other_group <- groups[groups != input$group1]
+      if (length(other_group) == 1) {
+        updateSelectInput(session, "group2", selected = other_group)
+      }
+    }
+  })
+  
+  ## 监听 group2 的变化，自动切换 group1
+  observeEvent(input$group2, {
+    req(data_group(), input$remove_biological_diff)
+    
+    groups <- unique(data_group()$group)
+    
+    # 只有当有两个分组时才进行自动切换
+    if (length(groups) == 2) {
+      # 获取另一个分组
+      other_group <- groups[groups != input$group2]
+      if (length(other_group) == 1) {
+        updateSelectInput(session, "group1", selected = other_group)
+      }
     }
   })
   ## 更新DE analysis可使用条件 ----
