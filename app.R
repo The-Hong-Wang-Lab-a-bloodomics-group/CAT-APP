@@ -883,7 +883,7 @@ server <- function(input, output, session) {
       req(input$group_file)
       df <- read.csv(input$group_file$datapath,na.strings = c("", "NA"))
       rownames(df) <- df[, 1]
-      data <- subset(df,select = -c(X))
+      data <- subset(df,select = c(id,group))
       
       # 检查分组数据的缺失值
       na_info_group <- check_na_values(data)
