@@ -929,6 +929,7 @@ server <- function(input, output, session) {
     req(result_check())
     req(constraint)  # 确保约束因子存在
     
+    # source("./R/data_correct_adaptive_model.R", local = TRUE)
     source("./R/data_correct.R", local = TRUE)
     showModal(modalDialog("Performing data correction, please wait...", footer = NULL))
     
