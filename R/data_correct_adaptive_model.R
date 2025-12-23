@@ -125,9 +125,9 @@ data_correct <- function(data,
     }
     
     components  <- data.frame(
-      erythrocyte = list_erythrocyte,
-      platelet = list_platelet,
-      coagulation = list_coagulation
+      x_eryth = list_erythrocyte,
+      x_plate = list_platelet,
+      x_coagu = list_coagulation
     )
     return(components)
   }
@@ -162,9 +162,7 @@ data_correct <- function(data,
   b <- matrix(nrow = nrow(rawdata), ncol = ncol(smpl2))
   rownames(b) <- rownames(rawdata)
   colnames(b) <- colnames(smpl2)
-  # 计算线性关系 ----
-  contaminant_relationships <- detect_contaminant_relationships(rawdata = data$rawdata,
-                                                                contamination_level = smpl2)
+
   # 计算约束系数 ----
   result_cor <- cor(as.matrix(t(data$rawdata)), method = "pearson")
   result_cor <- as.data.frame(result_cor)
@@ -192,254 +190,126 @@ data_correct <- function(data,
   # anova(fit)
   # 将预测变量提取出来，改名为代码中统一使用的名字
   base_data <- data.frame(
-    x_eryth = smpl2$erythrocyte,
-    x_plate = smpl2$platelet,
-    x_coagu = smpl2$coagulation,
+    x_eryth = smpl2$x_eryth,
+    x_plate = smpl2$x_plate,
+    x_coagu = smpl2$x_coagu,
     row.names = rownames(smpl2)
   )
   dd <- datadist(base_data)
   options(datadist = "dd")
-  var_names <- c("erythrocyte", "platelet", "coagulation")
-  x_vars    <- c("x_eryth", "x_plate", "x_coagu")
+  # 计算线性关系 ----
+  contaminant_relationships <- detect_contaminant_relationships(rawdata = data$rawdata,
+                                                                contamination_level = base_data)
   # correct ----
   if (setequal(type, c("coagulation","erythrocyte","platelet"))) {
+    var_names <- c("x_eryth", "x_plate", "x_coagu")
+    x_vars <- c("x_eryth", "x_plate", "x_coagu")
+    ## all ----
     ## all ----
     for (i in 1:nrow(ndata1)) {
+      # 1. 每一轮循环务必重置对象，防止上一轮的 fit 干扰
+      if(exists("fit")) rm(fit)
+      
       y_vec <- as.numeric(rawdata[i, ])
-      # 准备当前循环的数据框：包含 Y 和 所有的 X
       curr_data <- base_data
       curr_data$y_log <- log2(y_vec + 1)
-      # 准备约束因子
-      y_name <- rownames(rawdata)[i] # 获取当前基因名
-      # 安全获取约束因子 (处理可能出现的 NA 或 缺失)
+      y_name <- rownames(rawdata)[i]
+      
+      # 2. 获取约束因子
       get_constraint <- function(res_cor, g_name) {
         if (!is.null(res_cor) && g_name %in% names(res_cor)) res_cor[g_name] else 1
       }
-      # 将约束因子放入列表，方便索引
+      
       constraints_list <- list(
-        erythrocyte = get_constraint(result_cor_erythrocyte, y_name),
-        platelet    = get_constraint(result_cor_platelet, y_name),
-        coagulation = get_constraint(result_cor_coagulation, y_name)
+        x_eryth = get_constraint(result_cor_erythrocyte, y_name),
+        x_plate    = get_constraint(result_cor_platelet, y_name),
+        x_coagu = get_constraint(result_cor_coagulation, y_name)
       )
-      # 读取线性关系决定方程式
+      
+      # 3. 动态构建公式
       c_sub <- contaminant_relationships[contaminant_relationships$Protein == y_name, ]
-      # 提取关系并命名，例如 c(erythrocyte="Linear", platelet="None", ...)
       rels <- sapply(var_names, function(v) {
         val <- c_sub[c_sub$Contaminant == v, "Relationship"]
-        if(length(val) == 0) return("None") else return(as.character(val))
+        if(length(val) == 0 || is.na(val)) return("None") else return(as.character(val))
       })
-      # --- 2. 动态构建回归公式 ---
+      
       formula_terms <- c()
-      active_vars   <- c() # 记录哪些变量参与了模型（非 None）
+      active_vars   <- c() 
       
       for (k in seq_along(var_names)) {
         v_type <- rels[var_names[k]]
         v_x    <- x_vars[k]
-        
         if (v_type == "Linear") {
           formula_terms <- c(formula_terms, v_x)
           active_vars   <- c(active_vars, var_names[k])
         } else if (v_type == "Nonlinear") {
-          formula_terms <- c(formula_terms, paste0("rcs(", v_x, ", nk=5)"))
+          formula_terms <- c(formula_terms, paste0("rcs(", v_x, ", nk=3)"))
           active_vars   <- c(active_vars, var_names[k])
         }
       }
-      # 如果所有关系都是 None，保留原数据
+      
       if (length(formula_terms) == 0) {
         ndata1[i, ] <- curr_data$y_log
         next 
       }
-      # 组合公式：注意左边使用 curr_data 里的 y_log
+      
       f_str <- paste("y_log ~", paste(formula_terms, collapse = " + "))
       
-      # --- 4. 模型拟合与校正 ---
+      # 4. 模型拟合
+      # 只要涉及非线性或变量不全，统一用 ols (更稳健)
+      fit <- try(ols(as.formula(f_str), data = curr_data, x = TRUE, y = TRUE), silent = TRUE)
       
-      # --- 3. 模型拟合 ---
-      is_all_linear <- all(rels[active_vars] == "Linear")
+      if (inherits(fit, "try-error")) {
+        # 如果非线性报错，退回到纯线性
+        f_linear <- paste("y_log ~", paste(x_vars[x_vars %in% formula_terms | 
+                                                    gsub("rcs\\((.*),.*\\)", "\\1", formula_terms) %in% x_vars], 
+                                           collapse = " + "))
+        fit <- ols(as.formula(f_linear), data = curr_data, x = TRUE, y = TRUE)
+      }
       
-      intercept_val <- 0
-      total_effect  <- rep(0, nrow(curr_data)) # 初始化效应向量
-      # 只有当全部是 Linear 且没有 Nonlinear 时才尝试 rlm (如果你想严格复现之前的逻辑)
-      # 或者简单判断：只要不含 rcs 就用 rlm？这里为了稳健，若包含 Nonlinear 或 None 导致项减少，建议用 ols
-      # 【分支 A】: 纯线性模型 (使用 rlm)
-      if (is_all_linear && length(formula_terms) == 3) { # 假设3个都在且都是Linear才用rlm
+      # 5. 提取并计算效应
+      # predict(..., type="terms") 得到的是每个变量对 Y 的贡献部分
+      term_effects <- predict(fit, type = "terms")
+      # 转化为矩阵以防单列报错
+      term_effects <- as.matrix(term_effects) 
+      
+      total_effect <- rep(0, nrow(curr_data))
+      
+      for (v_name in active_vars) {
+        v_x <- x_vars[which(var_names == v_name)]
+        col_idx <- grep(v_x, colnames(term_effects), fixed = TRUE)
         
-        fit <- try(rlm(as.formula(f_str), data = curr_data, maxit = 30), silent = TRUE)
-        
-        if (inherits(fit, "try-error")) {
-          # 如果 rlm 失败，回退到 ols
-          fit <- ols(as.formula(f_str), data = curr_data, x=TRUE, y=TRUE)
-          use_rlm <- FALSE
-        } else {
-          use_rlm <- TRUE
-        }
-        if (use_rlm) {
-          coefs <- coef(fit)
-          intercept_val <- coefs["(Intercept)"]
-          
-          # 记录系数到 b 矩阵 (如果需要)
-          if (exists("b")) {
-            # 注意：这里需要根据 names(coefs) 来匹配 b 的列，简单起见略过
-          }
-          
-          # 手动计算效应
-          for (v_name in active_vars) {
-            v_x <- x_vars[which(var_names == v_name)]
-            # rlm 的系数名直接就是变量名
-            if (v_x %in% names(coefs)) {
-              eff <- curr_data[[v_x]] * coefs[v_x] * constraints_list[[v_name]]
-              total_effect <- total_effect + eff
-            }
-          }
+        if (length(col_idx) > 0) {
+          # 将该变量的所有项（线性或rcs的多个基函数）加总
+          raw_eff <- rowSums(term_effects[, col_idx, drop = FALSE])
+          # 核心校正：应用约束因子
+          total_effect <- total_effect + (raw_eff * constraints_list[[v_name]])
         }
       }
-      # 【分支 B】: 包含非线性或部分变量 (使用 ols)
-      if (!exists("fit") || !is_all_linear || length(formula_terms) < 3) {
-        
-        # 关键修正：data = curr_data (不要用 rawdata)
-        fit <- ols(as.formula(f_str), data = curr_data, x = TRUE, y = TRUE)
-        
-        intercept_val <- coef(fit)["Intercept"]
-        
-        # 使用 predict(type="terms") 获取加权前的各项效应矩阵
-        # 这会自动处理 rcs() 产生的多列复杂效应
-        term_effects <- predict(fit, type = "terms")
-        
-        # 遍历每个活跃变量，施加约束因子
-        for (v_name in active_vars) {
-          v_x <- x_vars[which(var_names == v_name)] # e.g. "x_coagu"
-          
-          # 在 predict 的结果列名中查找该变量
-          # 对于 rcs(x_coagu)，列名通常包含 "x_coagu"
-          col_idx <- grep(v_x, colnames(term_effects), fixed = TRUE)
-          
-          if (length(col_idx) > 0) {
-            # 如果是 rcs，可能会占用多列(取决于predict实现)，通常 type="terms" 对每个项返回一列
-            # 我们取对应那一列的值
-            raw_eff <- term_effects[, col_idx]
-            weighted_eff <- raw_eff * constraints_list[[v_name]]
-            total_effect <- total_effect + weighted_eff
-          }
-        }
-      }
-      # --- 5. 计算新的残差/校正后数据 ---
-      # 公式逻辑：原始值 - (截距 + constraint * (各部分加权效应)) + 截距
-      # 数学上等同于：原始值 - constraint * (各部分加权效应)
-      # 但为了保留你原本的代码结构：
-      ndata1[i, ] <- curr_data$y_log - (intercept_val + constraint * total_effect) + intercept_val
+      
+      # 6. 【关键修正】校正逻辑：原始值 - 污染产生的总效应
+      # 不加回 intercept_val，因为 total_effect 是相对于均值的增量
+      # 乘以外层的全局 constraint
+      ndata1[i, ] <- curr_data$y_log - (constraint * total_effect)
     }
   } else if (setequal(type, c("coagulation","platelet"))) {
     ## coagulation platelet ----
-    for (i in 1:nrow(ndata1)) {
-      y <- rawdata[i, ] # expression across samples
-      y <- t(y)
-      smpl2 <- smpl2[rownames(y),]
-      x_plate <- smpl2$platelet
-      x_coagu <- smpl2$coagulation
-      Constraint_factor_plate <- if (!is.null(result_cor_platelet)) result_cor_platelet[colnames(y)] else 1
-      Constraint_factor_coagu <- if (!is.null(result_cor_coagulation)) result_cor_coagulation[colnames(y)] else 1
-      a <- summary(rlm(log2(y + 1) ~ x_plate + x_coagu, maxit = 30))
-      for (j in 2:nrow(a$coefficients)) {
-        b[i, j - 1] = a$coefficients[j, 1]
-      }
-      # new residuals:
-      ndata1[i, ] <- log2(y + 1) - (a[["coefficients"]]["(Intercept)","Value"] + constraint * (
-        x_plate * a[["coefficients"]]["x_plate","Value"]* Constraint_factor_plate +
-          x_coagu *a[["coefficients"]]["x_coagu","Value"]* Constraint_factor_coagu) ) + 
-        a[["coefficients"]]["(Intercept)","Value"]
-    }
+
   } else if (setequal(type, c("coagulation","erythrocyte")))  {
     ## coagulation erythrocyte ----
-    for (i in 1:nrow(ndata1)) {
-      y <- rawdata[i, ] # expression across samples
-      y <- t(y)
-      smpl2 <- smpl2[rownames(y),]
-      x_eryth <- smpl2$erythrocyte
-      x_coagu <- smpl2$coagulation
-      Constraint_factor_eryth <- if (!is.null(result_cor_erythrocyte)) result_cor_erythrocyte[colnames(y)] else 1
-      Constraint_factor_coagu <- if (!is.null(result_cor_coagulation)) result_cor_coagulation[colnames(y)] else 1
-      a <- summary(rlm(log2(y + 1) ~ x_eryth + x_coagu, maxit = 30))
-      for (j in 2:nrow(a$coefficients)) {
-        b[i, j - 1] = a$coefficients[j, 1]
-      }
-      # new residuals:
-      ndata1[i, ] <- log2(y + 1) - (a[["coefficients"]]["(Intercept)","Value"] + constraint * (
-        x_eryth *a[["coefficients"]]["x_eryth","Value"]* Constraint_factor_eryth +
-          x_coagu *a[["coefficients"]]["x_coagu","Value"]* Constraint_factor_coagu) ) + 
-        a[["coefficients"]]["(Intercept)","Value"]
-    }
+
   } else if (setequal(type, c("erythrocyte","platelet"))){
     ## erythrocyte platelet ----
-    for (i in 1:nrow(ndata1)) {
-      y <- rawdata[i, ] # expression across samples
-      y <- t(y)
-      smpl2 <- smpl2[rownames(y),]
-      x_eryth <- smpl2$erythrocyte
-      x_plate <- smpl2$platelet
-      Constraint_factor_eryth <- if (!is.null(result_cor_erythrocyte)) result_cor_erythrocyte[colnames(y)] else 1
-      Constraint_factor_plate <- if (!is.null(result_cor_platelet)) result_cor_platelet[colnames(y)] else 1
-      a <- summary(rlm(log2(y + 1) ~ x_eryth + x_plate, maxit = 30))
-      for (j in 2:nrow(a$coefficients)) {
-        b[i, j - 1] = a$coefficients[j, 1]
-      }
-      # new residuals:
-      ndata1[i, ] <- log2(y + 1) - (a[["coefficients"]]["(Intercept)","Value"] + constraint * (
-        x_eryth *a[["coefficients"]]["x_eryth","Value"]* Constraint_factor_eryth + 
-          x_plate * a[["coefficients"]]["x_plate","Value"]* Constraint_factor_plate) ) + 
-        a[["coefficients"]]["(Intercept)","Value"]
-    }
+
   } else if (identical(type, "erythrocyte")) {
     # 红细胞单独校正 ----
-    for (i in 1:nrow(ndata1)) {
-      y <- rawdata[i, ] # expression across samples
-      y <- t(y)
-      smpl2 <- smpl2[rownames(y),]
-      x_eryth <- smpl2$erythrocyte
-      Constraint_factor_eryth <- if (!is.null(result_cor_erythrocyte)) result_cor_erythrocyte[colnames(y)] else 1
-      a <- summary(rlm(log2(y + 1) ~ x_eryth, maxit = 30))
-      for (j in 2:nrow(a$coefficients)) {
-        b[i, j - 1] = a$coefficients[j, 1]
-      }
-      # new residuals:
-      ndata1[i, ] <- log2(y + 1) - (a[["coefficients"]]["(Intercept)","Value"] + 
-                                      constraint * x_eryth * a[["coefficients"]]["x_eryth","Value"] * Constraint_factor_eryth) + 
-        a[["coefficients"]]["(Intercept)","Value"]
-    }
+
   } else if (identical(type, "platelet")) {
     # 血小板单独校正 ----
-    for (i in 1:nrow(ndata1)) {
-      y <- rawdata[i, ] # expression across samples
-      y <- t(y)
-      smpl2 <- smpl2[rownames(y),]
-      x_plate <- smpl2$platelet
-      Constraint_factor_plate <- if (!is.null(result_cor_platelet)) result_cor_platelet[colnames(y)] else 1
-      # x_coagu <- smpl2$coagulation
-      a <- summary(rlm(log2(y + 1) ~ x_plate, maxit = 30))
-      for (j in 2:nrow(a$coefficients)) {
-        b[i, j - 1] = a$coefficients[j, 1]
-      }
-      # new residuals:
-      ndata1[i, ] <- log2(y + 1) - (a[["coefficients"]]["(Intercept)","Value"] + 
-                                      constraint * x_plate * a[["coefficients"]]["x_plate","Value"] * Constraint_factor_plate) + 
-        a[["coefficients"]]["(Intercept)","Value"]
-    }
+
   } else if (identical(type, "coagulation"))  {
     # 凝血单独校正 ----
-    for (i in 1:nrow(ndata1)) {
-      y <- rawdata[i, ] # expression across samples
-      y <- t(y)
-      smpl2 <- smpl2[rownames(y),]
-      x_coagu <- smpl2$coagulation
-      Constraint_factor_coagu <- if (!is.null(result_cor_coagulation)) result_cor_coagulation[colnames(y)] else 1
-      a <- summary(rlm(log2(y + 1) ~ x_coagu, maxit = 30))
-      for (j in 2:nrow(a$coefficients)) {
-        b[i, j - 1] = a$coefficients[j, 1]
-      }
-      # new residuals:
-      ndata1[i, ] <- log2(y + 1) - (a[["coefficients"]]["(Intercept)","Value"] + 
-                                      constraint * x_coagu * a[["coefficients"]]["x_coagu","Value"] * Constraint_factor_coagu) + 
-        a[["coefficients"]]["(Intercept)","Value"]
-    }
+
   } else {
     stop("Unsupported correction type combination: ", paste(type, collapse = ", "))
   }

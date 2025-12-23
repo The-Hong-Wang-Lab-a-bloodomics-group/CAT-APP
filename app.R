@@ -929,8 +929,8 @@ server <- function(input, output, session) {
     req(result_check())
     req(constraint)  # 确保约束因子存在
     
-    # source("./R/data_correct_adaptive_model.R", local = TRUE)
-    source("./R/data_correct.R", local = TRUE)
+    source("./R/data_correct_adaptive_model.R", local = TRUE)
+    # source("./R/data_correct.R", local = TRUE)
     showModal(modalDialog("Performing data correction, please wait...", footer = NULL))
     
     # 根据选择的类型动态设置参数
@@ -944,6 +944,7 @@ server <- function(input, output, session) {
     
     # 调用矫正函数
     correct_result <- tryCatch({
+      print(correction_type)
       data_correct(
         data = result_check(), 
         type = correction_type,
