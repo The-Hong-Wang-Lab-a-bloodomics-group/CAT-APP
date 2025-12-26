@@ -43,11 +43,22 @@ detect_contaminant_relationships <- function(rawdata, contamination_level, nk = 
   protein_names <- rownames(rawdata)
   exposure_types <- colnames(dt_contam)
   # 2. 设置 rms 环境 (局部设置以防止污染全局环境)
-  old_opts <- options(datadist = NULL)
-  on.exit(options(old_opts)) # 函数结束时还原设置
-  dd <- datadist(df_combined)
-  options(datadist = "dd")
-
+  # old_opts <- options(datadist = NULL)
+  # on.exit(options(old_opts)) # 函数结束时还原设置
+  # dd <<- datadist(df_combined)
+  # options(datadist = "dd")
+  old_dd_opt <- getOption("datadist")
+  
+  dd_name <- paste0(".dd_tmp_", paste(sample(c(letters, LETTERS, 0:9), 12, TRUE), collapse=""))
+  assign(dd_name, rms::datadist(df_combined), envir = .GlobalEnv)
+  options(datadist = dd_name)
+  
+  on.exit({
+    options(datadist = old_dd_opt)
+    if (exists(dd_name, envir = .GlobalEnv, inherits = FALSE)) {
+      rm(list = dd_name, envir = .GlobalEnv)
+    }
+  }, add = TRUE)
   results_list <- list()
   
   # 3. 循环计算
@@ -63,7 +74,7 @@ detect_contaminant_relationships <- function(rawdata, contamination_level, nk = 
       tryCatch({
         # 拟合模型
         fit <- rms::ols(as.formula(formula_str), data = df_combined)
-        an <- rms::anova(fit)
+        an <- anova(fit)
         
         # 提取 P 值
         # rms 的 anova 表第一行通常是变量总效应，含有 'Nonlinear' 的行是分线性效应
