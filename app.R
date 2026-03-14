@@ -187,6 +187,12 @@ ui <- fluidPage(
                                         fileInput("group_file", "Upload Group Info File (CSV)", 
                                                   accept = ".csv")
                                       ),
+                                      h3("marker-panel",
+                                        radioButtons("marker_panel", "",
+                                                     choices = list("Conventional mass spectrometry-based" = "conventional", 
+                                                                    "Nanoparticle-enriched" = "nanoparticle"),
+                                                     selected = "conventional"),
+                                      ),
                                       h3("Grouping Settings",
                                          tags$span(
                                            id = 'span_step1_grouping_settings',
@@ -767,7 +773,61 @@ server <- function(input, output, session) {
     }
     return(data)
   })
-
+  ## 读取marker ----
+  marker_ery <- reactive({
+    if (input$marker_panel == "conventional") {
+      marker_ery <- c("HBA1","HBB","CA1","HBD","PRDX2","CA2",
+                      "CAT","SLC4A1","BLVRB","SPTA1","SPTB",
+                      "ANK1","GAPDH","SOD1","PRDX6","BPGM",
+                      "ACTB","ACTG1","SELENBP1","EPB41",
+                      "LDHB","EIF5A","EIF5A2","EIF5AL1",
+                      "PNP","ALDOA","TPI1","NIF3L1",
+                      "UBC","UBB","RPS27A","UBA52",
+                      "UBBP4","HBE1","HSPA8","PGK1","ALAD")
+    } else if (input$marker_panel == "nanoparticle") {
+      marker_ery <- c("FLOT1","PGK1","CA1","HBD","SPTA1","SPTB",
+                      "SLC4A1","GAPDH","HSPA8","EPB41","CD59",
+                      "ANK1","EPB42","CFL1","STOM","BLVRB","ADD1",
+                      "ADD2","SNCA","PIP4K2A","ACLY","PRPS1","RAP1B",
+                      "RAN","PPIA","HBB","HBA1","OLA1","PA2G4","MPP1")
+    }
+  })
+  marker_coa <- reactive({
+    if (input$marker_panel == "conventional") {
+      marker_coa <- c("FGB","FGG","FGA","F13A1",
+                      "SERPINC1","PPBP","F2",
+                      "GP1BA","ECM1","CLU",
+                      "DSP","WDR1","ATRN",
+                      "GP5","SERPINA5","C1RL",
+                      "MAN1A1","F11","KNG1",
+                      "BCHE","GPLD1","THBS1",
+                      "MASP1","TENM4","HSPG2",
+                      "APOC3","CDH5","LTF","CST3",
+                      "PROC","PF4","PF4V1")
+    } else if (input$marker_panel == "nanoparticle") {
+      marker_coa <- c("ANGPTL6","NPNT","COLEC11","AGGF1","FGG","FGA",
+                      "FGB","UTS2","CAMTA1","LRRC42","COL6A6","SORCS3",
+                      "COL4A1","COLEC10","LOXL1","TFRC","F5","THSD4",
+                      "FGL1","TLL2")
+    }
+  })
+  marker_platelet <- reactive({
+    if (input$marker_panel == "conventional") {
+      marker_platelet <- c("FLNA","TLN1","MYH9","ACTB","VCL",
+                           "ACTN1","TPM4","THBS1","TUBB1",
+                           "YWHAZ","GSN","TUBA1B","ITGA2B",
+                           "F13A1","PFN1","ITGB3","TAGLN2",
+                           "FERMT3","RAP1B","PLEK","PPBP",
+                           "GAPDH","MMRN1","MYL6","CFL1",
+                           "PARVB","SDPR","TUBB4B","TMSB4X","PKM")
+    } else if (input$marker_panel == "nanoparticle") {
+      marker_platelet <- c("ARHGAP6","ATP2A2","ATP2A3","ATP5F1B","DIAPH1","ESAM",
+                           "GNAI2","GNB1","GP5","HSP90B1","HSPD1","IDH2",
+                           "ITGA6","ITGB1","JAM3","LIMS1","MDH2","MLEC",
+                           "PDLIM7","PF4V1","PRDX3","RAB14","RAB35","RDH11",
+                           "SLC25A5","TBXAS1","TREML1","VDAC1","VDAC2","VDAC3")
+    }
+  })
   ### data_group
   data_group <- reactive({
     if (input$data_source == "example") {
@@ -850,9 +910,9 @@ server <- function(input, output, session) {
       cutoff = cor_cutoff(),
       group1 = input$group1,
       group2 = input$group2,
-      custom_erythrocyte = selected_markers$erythrocyte,
-      custom_coagulation = selected_markers$coagulation,
-      custom_platelet = selected_markers$platelet
+      custom_erythrocyte = marker_ery(),
+      custom_coagulation = marker_coa(),
+      custom_platelet = marker_platelet()
     )
     result_check(check_result)
     
@@ -1534,7 +1594,7 @@ server <- function(input, output, session) {
       set2 = result_de_pre()[result_de_pre()$significant == TRUE,"Protein"],
       categories = c("post", "pre"),
       title = "Two differences analysed results",
-      colors = c("#ae6b81", "#6982b9"),
+      colors = c("#6982b9","#ae6b81"),
       alpha = 0.6,
       print.mode = "raw"
     )
